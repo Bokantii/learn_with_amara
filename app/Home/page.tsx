@@ -7,7 +7,7 @@ interface HomeProps {
   onNavigate: (page: string) => void;
 }
 
-export function Home({ onNavigate }: HomeProps) {
+export default function Home({ onNavigate }: HomeProps) {
   return (
     <div>
       <Hero onNavigate={onNavigate} />

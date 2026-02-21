@@ -78,7 +78,7 @@ const courses = [
   },
 ];
 
-export function Courses() {
+export default function Courses() {
   return (
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">

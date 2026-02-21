@@ -34,7 +34,7 @@ const mockExamBenefits = [
   'Track your progress over time',
 ];
 
-export function TCFTEFPrep() {
+export default function TCFTEFPrep() {
   return (
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">

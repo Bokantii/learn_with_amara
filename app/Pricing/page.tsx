@@ -33,7 +33,7 @@ interface PricingPageProps {
   onNavigate: (page: string) => void;
 }
 
-export function Pricing({ onNavigate }: PricingPageProps) {
+export default function Pricing({ onNavigate }: PricingPageProps) {
   return (
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">

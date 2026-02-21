@@ -8,7 +8,7 @@ interface SignInProps {
   onNavigate: (page: string) => void;
 }
 
-export function SignIn({ onNavigate }: SignInProps) {
+export default function SignIn({ onNavigate }: SignInProps) {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
