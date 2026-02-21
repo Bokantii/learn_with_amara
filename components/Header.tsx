@@ -33,9 +33,10 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
             onClick={() => onNavigate('home')}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            {/* <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-white">ICLP</span>
-            </div>
+            </div> */}
+            <img src={logo.src} alt="ICLP Logo" className="w-18 h-18 object-contain" />
             
           </button>
 

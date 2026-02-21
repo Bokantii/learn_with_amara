@@ -1,7 +1,7 @@
 import { Facebook, Twitter, Linkedin, Youtube, Mail } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-
+import logo from '../assets/logo.png';
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
@@ -21,9 +21,10 @@ export function Footer({ onNavigate }: FooterProps) {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              {/* <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white">ICLP</span>
-              </div>
+              </div> */}
+                <img src={logo.src} alt="ICLP Logo" className="w-18 h-18 object-contain" />
             </div>
             <p className="text-muted-foreground">
               International Center for Language Proficiency - Master any language, anywhere.
