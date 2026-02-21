@@ -126,14 +126,15 @@ function ChartTooltipContent(
     indicator = "dot",
     hideLabel = false,
     hideIndicator = false,
-    label,
-    labelFormatter,
     labelClassName,
     formatter,
     color,
     nameKey,
     labelKey,
   } = props;
+
+  const label = (props as any).label;
+  const labelFormatter = (props as any).labelFormatter;
 
   const { config } = useChart();
 
