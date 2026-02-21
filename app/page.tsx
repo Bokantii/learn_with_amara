@@ -6,12 +6,12 @@ import { Star } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Header } from './../components/Header';
 import { Footer } from './../components/Footer';
-import { Home } from './Home/page';
-import { Courses } from './Courses/page';
-import { TCFTEFPrep } from './TCFTEFPrep/page';
-import { Pricing } from './Pricing/page';
-import { Blog } from './Blog/page';
-import { SignIn } from './SignIn/page';
+import Home  from './Home/page';
+import  Courses  from './Courses/page';
+import  TCFTEFPrep  from './TCFTEFPrep/page';
+import  Pricing  from './Pricing/page';
+import  Blog  from './Blog/page';
+import  SignIn  from './SignIn/page';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
