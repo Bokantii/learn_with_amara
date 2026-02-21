@@ -1,3 +1,4 @@
+'use client';
 import { Hero } from './../../components/Hero';
 import { FeatureBlocks } from './../../components/FeatureBlocks';
 import { Testimonials } from './../../components/Testimonials';
