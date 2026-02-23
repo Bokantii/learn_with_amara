@@ -5,8 +5,8 @@ import { Button } from './ui/button';
 const pricingTiers = [
   {
     name: 'Starter',
-    price: '$19',
-    period: '/month',
+    price: '$300',
+    period: '/3 months',
     description: 'Perfect for beginners exploring a new language',
     features: [
       'Access to 1 language course',
@@ -19,8 +19,8 @@ const pricingTiers = [
   },
   {
     name: 'Pro',
-    price: '$49',
-    period: '/month',
+    price: '$800',
+    period: '/6 months',
     description: 'Best for serious learners and exam preparation',
     features: [
       'Access to 3 language courses',

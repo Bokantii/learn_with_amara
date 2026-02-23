@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-
+import Amara from './../assets/amara1.jpeg';
 interface HeroProps {
   onNavigate: (page: string) => void;
 }
@@ -12,6 +12,9 @@ export function Hero({ onNavigate }: HeroProps) {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Text Content */}
           <div className="space-y-6 lg:space-y-8">
+            {/* <h1 className="text-4xl lg:text-5xl xl:text-6xl tracking-tight">
+              Learn with Amara, Your Language Coach.
+            </h1> */}
             <h1 className="text-4xl lg:text-5xl xl:text-6xl tracking-tight">
               Master Any Language, Anywhere.
             </h1>
@@ -56,9 +59,11 @@ export function Hero({ onNavigate }: HeroProps) {
           <div className="relative">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <ImageWithFallback
+                // src={Amara.src}
                 src="https://images.unsplash.com/photo-1653669487404-09c3617c2b6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaXZlcnNlJTIwcGVvcGxlJTIwbGVhcm5pbmclMjBvbmxpbmUlMjBsYXB0b3B8ZW58MXx8fHwxNzU5NzU4OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Diverse adults learning languages online on laptops and tablets"
                 className="w-full h-auto aspect-[4/3] object-cover"
+                // className="w-full h-auto aspect-[4/3] object-cover"
               />
             </div>
             {/* Floating Elements */}

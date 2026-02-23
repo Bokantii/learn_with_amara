@@ -6,11 +6,11 @@ import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
-interface SignInProps {
+interface SignUpProps {
   onNavigate: (page: string) => void;
 }
 
-export default function SignIn({ onNavigate }: SignInProps) {
+export default function SignUp({ onNavigate }: SignUpProps) {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -25,11 +25,29 @@ export default function SignIn({ onNavigate }: SignInProps) {
               </div>
               <h2 className="text-3xl">Welcome Back</h2>
               <p className="text-muted-foreground">
-                Sign in to continue your language learning journey
+                Sign up to begin your language learning journey
               </p>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-6">
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder=""
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder=""
+                    className="h-12"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -42,9 +60,7 @@ export default function SignIn({ onNavigate }: SignInProps) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
-                    <button className="text-sm text-primary hover:underline">
-                      Forgot password?
-                    </button>
+                   
                   </div>
                   <Input
                     id="password"
@@ -53,10 +69,21 @@ export default function SignIn({ onNavigate }: SignInProps) {
                     className="h-12"
                   />
                 </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="repeatPassword">Repeat Password</Label>
+                  </div>
+                  <Input
+                    id="repeatPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    className="h-12"
+                  />
+                </div>
               </div>
 
               <Button className="w-full h-12 bg-primary hover:bg-primary/90">
-                Sign In
+                Sign Up
               </Button>
 
               <div className="relative">
@@ -102,13 +129,13 @@ export default function SignIn({ onNavigate }: SignInProps) {
 
               <div className="text-center text-sm">
                 <span className="text-muted-foreground">
-                  Don't have an account?{" "}
+                  Already have an account?{" "}
                 </span>
                 <button
                   className="text-primary hover:underline"
-                  onClick={() => onNavigate("signup")}
+                  onClick={() => onNavigate("signin")}
                 >
-                  Sign up for free
+                  Sign in instead
                 </button>
               </div>
             </CardContent>

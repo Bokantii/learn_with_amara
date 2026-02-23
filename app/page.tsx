@@ -12,6 +12,7 @@ import  TCFTEFPrep  from './TCFTEFPrep/page';
 import  Pricing  from './Pricing/page';
 import  Blog  from './Blog/page';
 import  SignIn  from './SignIn/page';
+import  SignUp  from './SignUp/page';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -37,8 +38,10 @@ export default function App() {
         return <Pricing onNavigate={handleNavigate} />;
       case 'blog':
         return <Blog />;
-      case 'signin':
-        return <SignIn onNavigate={handleNavigate} />;
+        case 'signin':
+          return <SignIn onNavigate={handleNavigate} />;
+        case 'signup':
+          return <SignUp onNavigate={handleNavigate} />;
       default:
         return <Home onNavigate={handleNavigate} />;
     }
