@@ -21,7 +21,7 @@ export default function SignUp({ onNavigate }: SignUpProps) {
                 {/* <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
                   <span className="text-white text-xl">ICLP</span>
                 </div> */}
-                <Image src={logo} className="w-18 h-18 object-contain" />
+                <Image src={logo} className="w-18 h-18 object-contain" alt="ICLP Logo" />
               </div>
               <h2 className="text-3xl">Welcome Back</h2>
               <p className="text-muted-foreground">
