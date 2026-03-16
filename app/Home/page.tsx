@@ -1,8 +1,8 @@
 'use client';
-import { Hero } from './../../components/Hero';
-import { FeatureBlocks } from './../../components/FeatureBlocks';
-import { Testimonials } from './../../components/Testimonials';
-import { PricingSection } from './../../components/PricingSection';
+import { Hero } from '../../components/Hero';
+import { FeatureBlocks } from '../../components/FeatureBlocks';
+import { Testimonials } from '../../components/Testimonials';
+import { PricingSection } from '../../components/PricingSection';
 
 interface HomeProps {
   onNavigate: (page: string) => void;

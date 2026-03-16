@@ -1,6 +1,6 @@
 'use client';
-import { PricingSection } from './../../components/PricingSection';
-import { Card, CardContent } from './../../components/ui/card';
+import { PricingSection } from '../../components/PricingSection';
+import { Card, CardContent } from '../../components/ui/card';
 import { HelpCircle } from 'lucide-react';
 
 const faqs = [
