@@ -38,6 +38,14 @@ const blogPosts = [
     image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=800',
   },
   {
+    title: 'DELF vs. DALF: Which French Diploma Do You Need?',
+    excerpt: "Not applying for Canadian PR? DELF and DALF are the internationally recognized French diplomas for university, work, and general certification — here's how to pick your level.",
+    category: 'Exam Comparison',
+    date: 'Sep 18, 2025',
+    readTime: '6 min read',
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800',
+  },
+  {
     title: 'Staying Motivated on Your Path to French Fluency and PR',
     excerpt: 'Practical strategies to maintain your enthusiasm and push through plateaus when your French level stands between you and permanent residency.',
     category: 'Motivation',

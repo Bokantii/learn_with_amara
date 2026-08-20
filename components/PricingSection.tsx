@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { useLanguage } from '../lib/i18n/LanguageContext';
 import { translations } from '../lib/i18n/translations';
 
-const highlightedFlags = [true, false];
+const highlightedFlags = [true, false, false, false];
 
 interface PricingSectionProps {
   onNavigate: (page: string, planId?: string) => void;
@@ -28,7 +28,7 @@ export function PricingSection({ onNavigate }: PricingSectionProps) {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto">
           {copy.tiers.map((tier, index) => {
             const highlighted = highlightedFlags[index];
             return (
@@ -36,7 +36,7 @@ export function PricingSection({ onNavigate }: PricingSectionProps) {
                 key={index}
                 className={`relative border-2 transition-all duration-300 ${
                   highlighted
-                    ? 'border-primary shadow-xl scale-105 lg:scale-110'
+                    ? 'border-primary shadow-xl'
                     : 'border-border hover:border-primary/50 hover:shadow-lg'
                 }`}
               >

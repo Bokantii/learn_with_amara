@@ -2,11 +2,11 @@
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Clock, Users, Award, BookOpen, Target } from 'lucide-react';
+import { Clock, Users, Award, BookOpen, Target, GraduationCap, Rocket } from 'lucide-react';
 
 const tracks = [
   {
-    id: 'beginner' as const,
+    id: 'tcfTefBeginner' as const,
     icon: BookOpen,
     name: 'Beginner to TCF/TEF',
     description: 'Starting from scratch? Build real French fluency step by step, then transition straight into exam prep.',
@@ -17,7 +17,7 @@ const tracks = [
     color: 'bg-blue-50 border-blue-200',
   },
   {
-    id: 'examPrep' as const,
+    id: 'tcfTefExamPrep' as const,
     icon: Target,
     name: 'TCF/TEF Exam Prep Only',
     description: 'Already speak French? Skip straight to focused exam prep — mock exams, scoring strategy, and timed practice.',
@@ -26,6 +26,28 @@ const tracks = [
     duration: '6-8 weeks',
     exams: 'TEF, TCF',
     color: 'bg-amber-50 border-amber-200',
+  },
+  {
+    id: 'delfDalfBeginner' as const,
+    icon: GraduationCap,
+    name: 'Beginner to DELF/DALF',
+    description: 'Starting from scratch? Build real French fluency from A1 through your target DELF or DALF level.',
+    levels: 'A1 - C2',
+    students: '6K+',
+    duration: '9-12 months',
+    exams: 'DELF, DALF',
+    color: 'bg-emerald-50 border-emerald-200',
+  },
+  {
+    id: 'delfDalfExamPrep' as const,
+    icon: Rocket,
+    name: 'DELF/DALF Exam Prep Only',
+    description: 'Already speak French? Skip straight to focused DELF or DALF exam prep — practice exams, scoring strategy, and timed sections.',
+    levels: 'B1 - C2 (exam-ready)',
+    students: '4K+',
+    duration: '6-8 weeks',
+    exams: 'DELF, DALF',
+    color: 'bg-purple-50 border-purple-200',
   },
 ];
 
@@ -42,12 +64,12 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
             Choose Your French Track
           </h1>
           <p className="text-lg text-muted-foreground">
-            We focus on one thing: French, for the TCF and TEF exams. Pick the track that
-            matches where you're starting from.
+            We focus on one thing: French — for the TCF, TEF, DELF, and DALF exams. Pick the
+            track that matches where you're starting from and the exam you need.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {tracks.map((track, index) => (
             <Card
               key={index}

@@ -5,6 +5,10 @@ import { HelpCircle } from 'lucide-react';
 
 const faqs = [
   {
+    question: "What's the difference between TCF/TEF and DELF/DALF?",
+    answer: 'TCF and TEF give a single numeric score (used for Canadian immigration, like Express Entry). DELF and DALF are separate diplomas per level (A1-B2 for DELF, C1-C2 for DALF) — each is permanent and widely recognized for academic and general certification purposes.',
+  },
+  {
     question: 'Can I switch plans anytime?',
     answer: 'Yes! You can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.',
   },
@@ -43,7 +47,8 @@ export default function Pricing({ onNavigate }: PricingPageProps) {
             Simple, Transparent Pricing
           </h1>
           <p className="text-lg text-muted-foreground">
-            Choose the plan that fits your learning goals. All plans include access to our mobile app and community forum.
+            Choose the plan that fits your learning goals and your exam — TCF, TEF, DELF, or DALF.
+            All plans include access to our mobile app and community forum.
           </p>
         </div>
 

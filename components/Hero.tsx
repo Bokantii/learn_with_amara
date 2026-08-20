@@ -53,7 +53,7 @@ export function Hero({ onNavigate }: HeroProps) {
                 <div className="text-sm text-muted-foreground">{copy.activeLearners}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-3xl text-primary">2</div>
+                <div className="text-3xl text-primary">4</div>
                 <div className="text-sm text-muted-foreground">{copy.tracks}</div>
               </div>
               <div className="space-y-1">

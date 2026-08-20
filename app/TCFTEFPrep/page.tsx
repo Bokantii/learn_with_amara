@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent, CardHeader } from './../../components/ui/card';
 import { Button } from './../../components/ui/button';
-import { CheckCircle, BookOpen, Headphones, FileText, Video, Target } from 'lucide-react';
+import { CheckCircle, BookOpen, Headphones, FileText, Video, Target, GraduationCap, Rocket } from 'lucide-react';
 
 const paths = [
   {
@@ -14,6 +14,18 @@ const paths = [
     icon: Target,
     name: 'TCF/TEF Exam Prep Only',
     description: 'Already speak French? Skip the fundamentals and go straight into focused exam prep.',
+    cta: 'Fast-Track My Exam',
+  },
+  {
+    icon: GraduationCap,
+    name: 'Beginner to DELF/DALF',
+    description: 'New to French? Start from A1 and build toward your target DELF or DALF level, one diploma at a time.',
+    cta: 'Start From Scratch',
+  },
+  {
+    icon: Rocket,
+    name: 'DELF/DALF Exam Prep Only',
+    description: 'Already speak French? Skip the fundamentals and go straight into focused DELF or DALF exam prep.',
     cta: 'Fast-Track My Exam',
   },
 ];
@@ -57,11 +69,11 @@ export default function TCFTEFPrep() {
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h1 className="text-4xl lg:text-5xl mb-4">
-            TCF & TEF Exam Preparation
+            French Exam Preparation
           </h1>
           <p className="text-lg text-muted-foreground mb-6">
-            Whether you're starting French from scratch or already speak it fluently, we'll get
-            you the TCF/TEF score you need for immigration, study, or work.
+            TCF, TEF, DELF, or DALF — whether you're starting French from scratch or already
+            speak it fluently, we'll get you ready for immigration, study, or work.
           </p>
           <Button size="lg" className="bg-accent hover:bg-accent/90">
             Start Your Preparation
@@ -74,7 +86,7 @@ export default function TCFTEFPrep() {
           <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
             Whichever path you're on, you'll practice with the same real exam materials below.
           </p>
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {paths.map((path, index) => (
               <Card key={index} className="border-2 hover:border-primary transition-colors">
                 <CardContent className="p-6 space-y-4">
@@ -138,7 +150,7 @@ export default function TCFTEFPrep() {
               </Button>
             </div>
             <div className="bg-white rounded-xl p-8 shadow-xl">
-              <h3 className="text-2xl mb-6">Exam Scoring Guide</h3>
+              <h3 className="text-2xl mb-6">TCF/TEF Scoring Guide</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
                   <span>C2 (Advanced)</span>
@@ -162,6 +174,14 @@ export default function TCFTEFPrep() {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="mt-8 bg-white rounded-xl p-6 lg:p-8 shadow-xl">
+            <h3 className="text-xl mb-2">Prefer DELF/DALF instead?</h3>
+            <p className="text-muted-foreground">
+              DELF and DALF work differently: each level — A1, A2, B1, B2 (DELF) or C1, C2 (DALF)
+              — is its own diploma. Pass one, and it's yours for life, with no expiry and no need
+              to retake other levels.
+            </p>
           </div>
         </div>
       </div>
