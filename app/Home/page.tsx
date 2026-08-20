@@ -5,7 +5,7 @@ import { Testimonials } from '../../components/Testimonials';
 import { PricingSection } from '../../components/PricingSection';
 
 interface HomeProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, planId?: string) => void;
 }
 
 export default function Home({ onNavigate }: HomeProps) {

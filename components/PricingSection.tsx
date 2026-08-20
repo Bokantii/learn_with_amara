@@ -9,7 +9,7 @@ import { translations } from '../lib/i18n/translations';
 const highlightedFlags = [true, false];
 
 interface PricingSectionProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, planId?: string) => void;
 }
 
 export function PricingSection({ onNavigate }: PricingSectionProps) {
@@ -73,7 +73,7 @@ export function PricingSection({ onNavigate }: PricingSectionProps) {
                         : 'bg-primary hover:bg-primary/90'
                     }`}
                     size="lg"
-                    onClick={() => onNavigate('pricing')}
+                    onClick={() => onNavigate('checkout', tier.id)}
                   >
                     {copy.choosePlan}
                   </Button>

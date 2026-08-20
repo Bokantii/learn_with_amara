@@ -6,23 +6,28 @@ import { Star } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Header } from './../components/Header';
 import { Footer } from './../components/Footer';
-import Home  from './home/page';
+import Home  from './Home/page';
 import  Courses  from './Courses/page';
 import  TCFTEFPrep  from './TCFTEFPrep/page';
-import  Pricing  from './pricing/page';
+import  Pricing  from './Pricing/page';
 import  Blog  from './Blog/page';
-import  SignIn  from './signin/page';
-import  SignUp  from './signup/page';
+import  SignIn  from './SignIn/page';
+import  SignUp  from './SignUp/page';
+import Checkout from './checkout/page';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined);
 
   // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
-  const handleNavigate = (page: string) => {
+  const handleNavigate = (page: string, planId?: string) => {
+    if (planId) {
+      setSelectedPlanId(planId);
+    }
     setCurrentPage(page);
   };
 
@@ -31,7 +36,7 @@ export default function App() {
       case 'home':
         return <Home onNavigate={handleNavigate} />;
       case 'courses':
-        return <Courses />;
+        return <Courses onNavigate={handleNavigate} />;
       case 'tcf-tef':
         return <TCFTEFPrep />;
       case 'pricing':
@@ -42,6 +47,8 @@ export default function App() {
           return <SignIn onNavigate={handleNavigate} />;
         case 'signup':
           return <SignUp onNavigate={handleNavigate} />;
+        case 'checkout':
+          return <Checkout onNavigate={handleNavigate} planId={selectedPlanId} />;
       default:
         return <Home onNavigate={handleNavigate} />;
     }

@@ -6,6 +6,7 @@ import { Clock, Users, Award, BookOpen, Target } from 'lucide-react';
 
 const tracks = [
   {
+    id: 'beginner' as const,
     icon: BookOpen,
     name: 'Beginner to TCF/TEF',
     description: 'Starting from scratch? Build real French fluency step by step, then transition straight into exam prep.',
@@ -16,6 +17,7 @@ const tracks = [
     color: 'bg-blue-50 border-blue-200',
   },
   {
+    id: 'examPrep' as const,
     icon: Target,
     name: 'TCF/TEF Exam Prep Only',
     description: 'Already speak French? Skip straight to focused exam prep — mock exams, scoring strategy, and timed practice.',
@@ -27,7 +29,11 @@ const tracks = [
   },
 ];
 
-export default function Courses() {
+interface CoursesProps {
+  onNavigate: (page: string, planId?: string) => void;
+}
+
+export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>) {
   return (
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -72,7 +78,10 @@ export default function Courses() {
                     <span>Exam prep: {track.exams}</span>
                   </div>
                 </div>
-                <Button className="w-full bg-primary hover:bg-primary/90">
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90"
+                  onClick={() => onNavigate('checkout', track.id)}
+                >
                   Start Learning
                 </Button>
               </CardContent>

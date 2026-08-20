@@ -47,6 +47,7 @@ export const translations: Record<
       mostPopular: string;
       choosePlan: string;
       tiers: {
+        id: 'beginner' | 'examPrep';
         name: string;
         price: string;
         period: string;
@@ -135,6 +136,7 @@ export const translations: Record<
       choosePlan: 'Choose Plan',
       tiers: [
         {
+          id: 'beginner',
           name: 'Beginner to TCF/TEF',
           price: '$800',
           period: '/9 months',
@@ -150,6 +152,7 @@ export const translations: Record<
           ],
         },
         {
+          id: 'examPrep',
           name: 'TCF/TEF Exam Prep Only',
           price: '$300',
           period: '/8 weeks',
@@ -248,6 +251,7 @@ export const translations: Record<
       choosePlan: 'Choisir ce forfait',
       tiers: [
         {
+          id: 'beginner',
           name: 'Débutant vers le TCF/TEF',
           price: '800 $',
           period: '/9 mois',
@@ -263,6 +267,7 @@ export const translations: Record<
           ],
         },
         {
+          id: 'examPrep',
           name: 'Préparation TCF/TEF seule',
           price: '300 $',
           period: '/8 semaines',

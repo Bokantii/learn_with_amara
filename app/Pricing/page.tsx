@@ -31,7 +31,7 @@ const faqs = [
 ];
 
 interface PricingPageProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, planId?: string) => void;
 }
 
 export default function Pricing({ onNavigate }: PricingPageProps) {
