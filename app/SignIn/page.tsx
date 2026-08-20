@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -7,10 +9,39 @@ import { Separator } from "../../components/ui/separator";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
 interface SignInProps {
-  onNavigate: (page: string) => void;
+  onNavigate?: (page: string) => void;
 }
 
-export default function SignIn({ onNavigate }: SignInProps) {
+export default function SignIn({ onNavigate = () => {} }: SignInProps) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Unable to sign in.");
+        return;
+      }
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -29,35 +60,53 @@ export default function SignIn({ onNavigate }: SignInProps) {
               </p>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <button className="text-sm text-primary hover:underline">
-                      Forgot password?
-                    </button>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="h-12"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="h-12"
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <button type="button" className="text-sm text-primary hover:underline">
+                        Forgot password?
+                      </button>
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <Button className="w-full h-12 bg-primary hover:bg-primary/90">
-                Sign In
-              </Button>
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing In..." : "Sign In"}
+                </Button>
+              </form>
 
               <div className="relative">
                 <Separator />
