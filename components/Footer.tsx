@@ -1,17 +1,24 @@
+'use client';
+
 import { Facebook, Twitter, Linkedin, Youtube, Mail } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import logo from '../assets/logo.png';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { translations } from '../lib/i18n/translations';
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
 
 export function Footer({ onNavigate }: FooterProps) {
+  const { language } = useLanguage();
+  const copy = translations[language].footer;
+
   const quickLinks = [
-    { label: 'About', page: 'home' },
-    { label: 'Community', page: 'home' },
-    { label: 'Terms of Service', page: 'home' },
-    { label: 'Privacy Policy', page: 'home' },
+    { label: copy.quickLinks.about, page: 'home' },
+    { label: copy.quickLinks.community, page: 'home' },
+    { label: copy.quickLinks.terms, page: 'home' },
+    { label: copy.quickLinks.privacy, page: 'home' },
   ];
 
   return (
@@ -27,13 +34,13 @@ export function Footer({ onNavigate }: FooterProps) {
                 <img src={logo.src} alt="ICLP Logo" className="w-18 h-18 object-contain" />
             </div>
             <p className="text-muted-foreground">
-              International Center for Language Proficiency - Master any language, anywhere.
+              {copy.tagline}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3>Quick Links</h3>
+            <h3>{copy.quickLinksHeading}</h3>
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.label}>
@@ -50,24 +57,24 @@ export function Footer({ onNavigate }: FooterProps) {
 
           {/* Contact */}
           <div className="space-y-4">
-            <h3>Contact</h3>
+            <h3>{copy.contactHeading}</h3>
             <div className="space-y-2 text-muted-foreground">
-              <p>Email: info@iclp.com</p>
-              <p>Phone: +1 (555) 123-4567</p>
-              <p>Support Hours: 24/7</p>
+              <p>{copy.email}</p>
+              <p>{copy.phone}</p>
+              <p>{copy.supportHours}</p>
             </div>
           </div>
 
           {/* Newsletter */}
           <div className="space-y-4">
-            <h3>Newsletter</h3>
+            <h3>{copy.newsletterHeading}</h3>
             <p className="text-muted-foreground">
-              Subscribe to get updates on new courses and features.
+              {copy.newsletterDescription}
             </p>
             <div className="flex gap-2">
               <Input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={copy.emailPlaceholder}
                 className="bg-white"
               />
               <Button className="bg-primary hover:bg-primary/90 shrink-0">
@@ -80,7 +87,7 @@ export function Footer({ onNavigate }: FooterProps) {
         {/* Social Links */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 pt-8 border-t border-border">
           <p className="text-muted-foreground">
-            © 2025 ICLP. All rights reserved.
+            {copy.copyright}
           </p>
           <div className="flex items-center gap-4">
             <a

@@ -1,7 +1,22 @@
 'use client';
 import { Card, CardContent, CardHeader } from './../../components/ui/card';
 import { Button } from './../../components/ui/button';
-import { CheckCircle, BookOpen, Headphones, FileText, Video } from 'lucide-react';
+import { CheckCircle, BookOpen, Headphones, FileText, Video, Target } from 'lucide-react';
+
+const paths = [
+  {
+    icon: BookOpen,
+    name: 'Beginner to TCF/TEF',
+    description: "New to French? Start from A0 and build toward exam-ready fluency, with TCF/TEF prep built into the final stretch.",
+    cta: 'Start From Scratch',
+  },
+  {
+    icon: Target,
+    name: 'TCF/TEF Exam Prep Only',
+    description: 'Already speak French? Skip the fundamentals and go straight into focused exam prep.',
+    cta: 'Fast-Track My Exam',
+  },
+];
 
 const examFeatures = [
   {
@@ -45,12 +60,38 @@ export default function TCFTEFPrep() {
             TCF & TEF Exam Preparation
           </h1>
           <p className="text-lg text-muted-foreground mb-6">
-            Ace your French proficiency exams with our comprehensive preparation courses. 
-            We'll help you achieve the score you need for immigration, study, or work.
+            Whether you're starting French from scratch or already speak it fluently, we'll get
+            you the TCF/TEF score you need for immigration, study, or work.
           </p>
           <Button size="lg" className="bg-accent hover:bg-accent/90">
             Start Your Preparation
           </Button>
+        </div>
+
+        {/* Choose Your Path */}
+        <div className="mb-16">
+          <h2 className="text-3xl text-center mb-4">Choose Your Path</h2>
+          <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
+            Whichever path you're on, you'll practice with the same real exam materials below.
+          </p>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {paths.map((path, index) => (
+              <Card key={index} className="border-2 hover:border-primary transition-colors">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <path.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl">{path.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {path.description}
+                  </p>
+                  <Button className="w-full bg-primary hover:bg-primary/90">
+                    {path.cta}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* What's Included */}

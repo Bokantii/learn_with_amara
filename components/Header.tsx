@@ -1,7 +1,11 @@
+'use client';
+
 import { useState } from 'react';
 import { Menu, X, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from '../assets/logo.png';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { translations } from '../lib/i18n/translations';
 
 interface HeaderProps {
   onNavigate: (page: string) => void;
@@ -10,19 +14,16 @@ interface HeaderProps {
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [language, setLanguage] = useState('EN');
+  const { language, toggleLanguage } = useLanguage();
+  const copy = translations[language].header;
 
   const navItems = [
-    { label: 'Home', page: 'home' },
-    { label: 'Courses', page: 'courses' },
-    { label: 'TCF/TEF Prep', page: 'tcf-tef' },
-    { label: 'Pricing', page: 'pricing' },
-    { label: 'Blog', page: 'blog' },
+    { label: copy.nav.home, page: 'home' },
+    { label: copy.nav.courses, page: 'courses' },
+    { label: copy.nav.tcfTef, page: 'tcf-tef' },
+    { label: copy.nav.pricing, page: 'pricing' },
+    { label: copy.nav.blog, page: 'blog' },
   ];
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'EN' ? 'FR' : 'EN');
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-border">
@@ -68,13 +69,13 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               variant="ghost"
               onClick={() => onNavigate('signin')}
             >
-              Sign In
+              {copy.signIn}
             </Button>
             <Button
               className="bg-accent hover:bg-accent/90"
               onClick={() => onNavigate('home')}
             >
-              Get Started
+              {copy.getStarted}
             </Button>
           </div>
 
@@ -128,7 +129,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
                     setIsMenuOpen(false);
                   }}
                 >
-                  Sign In
+                  {copy.signIn}
                 </Button>
               </div>
               <Button
@@ -138,7 +139,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
                   setIsMenuOpen(false);
                 }}
               >
-                Get Started
+                {copy.getStarted}
               </Button>
             </div>
           </nav>
