@@ -125,7 +125,7 @@ const getPriorityStyles = (priority: Priority) => {
   }
 };
 
-export default function Assignments(): JSX.Element {
+export default function Assignments() {
   return (
     <div className="space-y-6">
       <div>

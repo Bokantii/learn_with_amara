@@ -117,7 +117,7 @@ const paymentMethods: PaymentMethod[] = [
   },
 ];
 
-export default function Billing(): JSX.Element {
+export default function Billing() {
   return (
     <div className="space-y-6">
       <div>
