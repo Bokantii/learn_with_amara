@@ -1,37 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ICLP — Learn with Amara
+
+International Center for Language Proficiency: French learning platform with TCF/TEF exam prep, DELF/DALF tracks, student groups, assignments, and payments.
+
+Built with Next.js (App Router), PostgreSQL via Prisma, NextAuth, Stripe, Resend, and Vercel Blob.
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy `.env.example` to `.env.local` and fill in the values (see comments in that file for where to get each one). At minimum for local dev you need a Postgres `DATABASE_URL` and `AUTH_SECRET`.
+3. Run migrations and seed demo data:
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   ```
+4. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Seeded accounts: `admin@iclp.com` / `admin1234` (admin) and `demo@iclp.com` / `demo1234` (student).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run dev` — start the dev server (Turbopack)
+- `npm run build` — production build
+- `npm run lint` — ESLint
+- `npm run test:e2e` — Playwright end-to-end tests (requires the dev server + seeded database)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+Deployed on [Vercel](https://vercel.com). Swap `DATABASE_URL` for a [Neon](https://neon.tech) connection string in production, and configure the Stripe/Resend/Blob/Upstash/Sentry environment variables listed in `.env.example` as needed.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# learn_with_amara
+**Note on route casing**: this repo is developed on macOS, which has a case-insensitive filesystem — Vercel's build runs on a case-sensitive one. If a build succeeds locally but 404s on routes after deploying, check that every `redirect()`/`router.push()`/`revalidatePath()` string matches the actual folder casing under `app/` exactly (`git ls-files app/` shows the real tracked casing).
