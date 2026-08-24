@@ -13,11 +13,11 @@ import  Pricing  from './Pricing/page';
 import  Blog  from './Blog/page';
 import  SignIn  from './SignIn/page';
 import  SignUp  from './SignUp/page';
-import Checkout from './checkout/page';
+import { useRouter } from 'next/navigation';
 
 export default function App() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState('home');
-  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined);
 
   // Scroll to top when page changes
   useEffect(() => {
@@ -25,8 +25,11 @@ export default function App() {
   }, [currentPage]);
 
   const handleNavigate = (page: string, planId?: string) => {
-    if (planId) {
-      setSelectedPlanId(planId);
+    if (page === 'checkout') {
+      // Checkout is a real route (needs a server-side auth check + Stripe
+      // redirect), not part of this SPA-state switch.
+      router.push(planId ? `/checkout?planId=${planId}` : '/checkout');
+      return;
     }
     setCurrentPage(page);
   };
@@ -47,8 +50,6 @@ export default function App() {
           return <SignIn onNavigate={handleNavigate} />;
         case 'signup':
           return <SignUp onNavigate={handleNavigate} />;
-        case 'checkout':
-          return <Checkout onNavigate={handleNavigate} planId={selectedPlanId} />;
       default:
         return <Home onNavigate={handleNavigate} />;
     }

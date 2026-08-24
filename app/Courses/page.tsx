@@ -102,7 +102,7 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
                 </div>
                 <Button
                   className="w-full bg-primary hover:bg-primary/90"
-                  onClick={() => onNavigate('checkout', track.id)}
+                  onClick={() => onNavigate('pricing')}
                 >
                   Start Learning
                 </Button>

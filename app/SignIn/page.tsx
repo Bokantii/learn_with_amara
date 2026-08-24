@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn, getSession } from "next-auth/react";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -10,6 +11,19 @@ import Image from "next/image";
 import logo from "./../../assets/logo.png";
 interface SignInProps {
   onNavigate?: (page: string) => void;
+}
+
+function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      onError("Unable to sign in with that provider. Please try again.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
 }
 
 export default function SignIn({ onNavigate = () => {} }: SignInProps) {
@@ -24,17 +38,21 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
     setError(null);
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Unable to sign in.");
+      if (!result || result.error) {
+        setError(
+          result?.code === "rate_limited"
+            ? "Too many sign-in attempts. Please wait a minute and try again."
+            : "Invalid email or password."
+        );
         return;
       }
-      router.push("/dashboard");
+      const session = await getSession();
+      router.push(session?.user?.role === "ADMIN" ? "/admin" : "/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -44,6 +62,9 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
+      <Suspense fallback={null}>
+        <OAuthErrorBanner onError={setError} />
+      </Suspense>
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-md mx-auto">
           <Card className="border-2">
@@ -116,7 +137,12 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-12">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12"
+                  onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
@@ -137,7 +163,12 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
                   </svg>
                   Google
                 </Button>
-                <Button variant="outline" className="h-12">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12"
+                  onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
+                >
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="currentColor"

@@ -1,16 +1,15 @@
-'use client'
+import { redirect } from "next/navigation";
+import { auth } from "../../auth";
+import { prisma } from "../../lib/prisma";
 import { Card } from "./../../components/ui/card";
 import { Progress } from "./../../components/ui/progress";
 import { Button } from "./../../components/ui/button";
 import { Badge } from "./../../components/ui/badge";
 import {
   Video, PlayCircle, Calendar, Clock, TrendingUp,
-  CheckCircle2, AlertCircle, Trophy, Target,
+  CheckCircle2, AlertCircle, Trophy, Target, UsersRound,
 } from "lucide-react";
-import {
-  CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis,
-} from "recharts";
+import WeeklyProgressChart from "./WeeklyProgressChart";
 
 const progressData = [
   { week: "W1", score: 65 },
@@ -49,7 +48,22 @@ const announcements = [
   },
 ];
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/SignIn");
+  }
+
+  const memberships = await prisma.groupMembership.findMany({
+    where: { userId: session.user.id },
+    include: { group: { include: { program: true } } },
+  });
+  const myGroups = memberships.map((m) => ({
+    id: m.group.id,
+    name: m.group.name,
+    programName: m.group.program.name,
+  }));
+
   return (
     <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
 
@@ -210,27 +224,41 @@ export default function Dashboard() {
           {/* Progress Chart */}
           <Card className="p-4 md:p-6">
             <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">Weekly Progress</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="week" stroke="#64748b" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#64748b" tick={{ fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Line type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <WeeklyProgressChart data={progressData} />
           </Card>
         </div>
 
         {/* Right Column */}
         <div className="space-y-4 md:space-y-6">
+
+          {/* My Group(s) */}
+          <Card className="p-4 md:p-6">
+            <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">My Group{myGroups.length === 1 ? "" : "s"}</h3>
+            {myGroups.length === 0 ? (
+              <p className="text-xs md:text-sm text-slate-500">
+                You haven&apos;t been added to a group yet.
+              </p>
+            ) : (
+              <div className="space-y-2 md:space-y-3">
+                {myGroups.map((group) => (
+                  <div
+                    key={group.id}
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                      <UsersRound className="w-4 h-4 text-violet-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-slate-900 truncate">{group.name}</p>
+                      <Badge className="mt-1 bg-sky-100 text-sky-700 hover:bg-sky-100 text-xs">
+                        {group.programName}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
           {/* Tasks Due */}
           <Card className="p-4 md:p-6">

@@ -1,4 +1,7 @@
 "use client";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -6,11 +9,54 @@ import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
+import { signUpAction } from "./actions";
+
 interface SignUpProps {
   onNavigate: (page: string) => void;
 }
 
 export default function SignUp({ onNavigate }: SignUpProps) {
+  const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== repeatPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await signUpAction({ firstName, lastName, email, password });
+      if (result.serverError || result.validationErrors) {
+        setError(result.serverError ?? "Please check the form and try again.");
+        return;
+      }
+
+      const signInResult = await signIn("credentials", { email, password, redirect: false });
+      if (!signInResult || signInResult.error) {
+        setError("Account created — please sign in.");
+        onNavigate("signin");
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -18,73 +64,92 @@ export default function SignUp({ onNavigate }: SignUpProps) {
           <Card className="border-2">
             <CardHeader className="p-8 space-y-2 text-center">
               <div className="flex justify-center mb-4">
-                {/* <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-                  <span className="text-white text-xl">ICLP</span>
-                </div> */}
                 <Image src={logo} className="w-18 h-18 object-contain" alt="ICLP Logo" />
               </div>
-              <h2 className="text-3xl">Welcome Back</h2>
+              <h2 className="text-3xl">Create Your Account</h2>
               <p className="text-muted-foreground">
-                Sign up to begin your language learning journey
+                Sign up to begin your French learning journey
               </p>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder=""
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder=""
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      className="h-12"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      className="h-12"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="h-12"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                   
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      minLength={8}
+                      required
+                    />
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="space-y-2">
                     <Label htmlFor="repeatPassword">Repeat Password</Label>
+                    <Input
+                      id="repeatPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={repeatPassword}
+                      onChange={(e) => setRepeatPassword(e.target.value)}
+                      minLength={8}
+                      required
+                    />
                   </div>
-                  <Input
-                    id="repeatPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    className="h-12"
-                  />
                 </div>
-              </div>
 
-              <Button className="w-full h-12 bg-primary hover:bg-primary/90">
-                Sign Up
-              </Button>
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Account..." : "Sign Up"}
+                </Button>
+              </form>
 
               <div className="relative">
                 <Separator />
@@ -94,7 +159,12 @@ export default function SignUp({ onNavigate }: SignUpProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-12">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12"
+                  onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
@@ -115,7 +185,12 @@ export default function SignUp({ onNavigate }: SignUpProps) {
                   </svg>
                   Google
                 </Button>
-                <Button variant="outline" className="h-12">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12"
+                  onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
+                >
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="currentColor"

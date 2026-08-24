@@ -2,7 +2,7 @@
 import { Hero } from '../../components/Hero';
 import { FeatureBlocks } from '../../components/FeatureBlocks';
 import { Testimonials } from '../../components/Testimonials';
-import { PricingSection } from '../../components/PricingSection';
+import { PricingTeaser } from '../../components/PricingTeaser';
 
 interface HomeProps {
   onNavigate: (page: string, planId?: string) => void;
@@ -14,7 +14,7 @@ export default function Home({ onNavigate }: HomeProps) {
       <Hero onNavigate={onNavigate} />
       <FeatureBlocks />
       <Testimonials />
-      <PricingSection onNavigate={onNavigate} />
+      <PricingTeaser onNavigate={onNavigate} />
     </div>
   );
 }

@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth.js (NextAuth) required models ────────────────────────────────────
+// Shape follows https://authjs.dev/getting-started/adapters/prisma exactly,
+// so @auth/prisma-adapter works without customization.
+
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── App models ─────────────────────────────────────────────────────────
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  passwordHash  String?   // null for OAuth-only accounts (Google/Facebook)
+  role          Role      @default(STUDENT)
+
+  accounts         Account[]
+  sessions         Session[]
+  enrollments      Enrollment[]
+  submissions      Submission[]
+  payments         Payment[]
+  groupMemberships GroupMembership[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+}
+
+model Program {
+  id   String @id @default(cuid())
+  name String
+  track String // e.g. "tcf-tef-beginner", "delf-dalf-exam-prep"
+
+  enrollments Enrollment[]
+  assignments Assignment[]
+  groups      Group[]
+
+  @@map("programs")
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  programId String           @map("program_id")
+  status    EnrollmentStatus @default(ACTIVE)
+  progress  Int              @default(0)
+  joinedAt  DateTime         @default(now()) @map("joined_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id])
+
+  @@unique([userId, programId])
+  @@map("enrollments")
+}
+
+model Assignment {
+  id        String   @id @default(cuid())
+  title     String
+  programId String   @map("program_id")
+  groupId   String?  @map("group_id")
+  dueDate   DateTime @map("due_date")
+  points    Int
+  type      String
+  priority  String
+
+  program     Program      @relation(fields: [programId], references: [id])
+  group       Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  programId String   @map("program_id")
+
+  program     Program           @relation(fields: [programId], references: [id])
+  members     GroupMembership[]
+  assignments Assignment[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("groups")
+}
+
+model GroupMembership {
+  id       String   @id @default(cuid())
+  userId   String   @map("user_id")
+  groupId  String   @map("group_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("group_memberships")
+}
+
+enum SubmissionStatus {
+  PENDING
+  GRADED
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  studentId    String           @map("student_id")
+  assignmentId String           @map("assignment_id")
+  submittedAt  DateTime         @default(now()) @map("submitted_at")
+  status       SubmissionStatus @default(PENDING)
+  score        Int?
+  feedback     String?
+  fileUrl      String?          @map("file_url")
+
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@map("submissions")
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  OVERDUE
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  amountCents     Int           @map("amount_cents")
+  currency        String        @default("usd")
+  status          PaymentStatus
+  stripePaymentId String?       @unique @map("stripe_payment_id")
+  dueDate         DateTime      @map("due_date")
+  paidAt          DateTime?     @map("paid_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
