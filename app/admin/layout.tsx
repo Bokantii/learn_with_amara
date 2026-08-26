@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Bell, Shield } from "lucide-react";
-import { auth } from "../../auth";
+import { getSessionUser } from "../../lib/authz";
 import NavLinks from "./NavLinks";
 
 export default async function AdminLayout({
@@ -8,13 +8,13 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const user = await getSessionUser();
 
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!user || user.role !== "ADMIN") {
     redirect("/SignIn");
   }
 
-  const admin = { name: session.user.name ?? "Admin" };
+  const admin = { name: user.name ?? "Admin" };
 
   return (
     <div className="flex h-screen bg-slate-50">

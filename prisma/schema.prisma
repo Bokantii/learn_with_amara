@@ -55,6 +55,7 @@ model VerificationToken {
 
 enum Role {
   STUDENT
+  INSTRUCTOR
   ADMIN
 }
 

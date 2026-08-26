@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('admin grades a pending submission', async ({ page }) => {
   await page.goto('/SignIn');
   await page.getByLabel('Email').fill('admin@iclp.com');
-  await page.getByLabel('Password').fill('admin1234');
+  await page.getByLabel('Password', { exact: true }).fill('admin1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/admin$/);
 

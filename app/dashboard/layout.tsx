@@ -1,26 +1,24 @@
-import Link from "next/link";
-import {
-  LayoutDashboard, BookOpen, Video, PlayCircle,
-  ClipboardList, BarChart3, CreditCard,
-  Settings as SettingsIcon, Bell, User,
-} from "lucide-react";
+import { redirect } from "next/navigation";
+import { Bell, User } from "lucide-react";
+import { getSessionUser, hasActiveEnrollment } from "../../lib/authz";
 import NavLinks from "./NavLinks";
-const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/dashboard/myprograms", label: "My Programs", icon: BookOpen },
-  { path: "/dashboard/liveclasses", label: "Live Classes", icon: Video },
-  { path: "/dashboard/recordedlessons", label: "Recorded Lessons", icon: PlayCircle },
-  { path: "/dashboard/assignments", label: "Assignments", icon: ClipboardList },
-  { path: "/dashboard/results", label: "Results", icon: BarChart3 },
-  { path: "/dashboard/billing", label: "Billing", icon: CreditCard },
-  { path: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
-];
+import OnboardingEmptyState from "./OnboardingEmptyState";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getSessionUser();
+
+  if (!user?.id) {
+    redirect("/SignIn");
+  }
+
+  const enrolled = await hasActiveEnrollment(user.id);
+  const displayName = user.name ?? user.email ?? "there";
+  const firstName = displayName.split(" ")[0];
+
   return (
     <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
@@ -49,8 +47,8 @@ export default function DashboardLayout({
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center">
               <User className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-900">Sarah Chen</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-900 truncate">{displayName}</p>
               <p className="text-xs text-slate-500">Student</p>
             </div>
           </div>
@@ -63,7 +61,7 @@ export default function DashboardLayout({
         <header className="bg-white border-b border-slate-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome back, Sarah!</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Welcome back, {firstName}!</h2>
               <p className="text-sm text-slate-500 mt-1">Let's continue your learning journey</p>
             </div>
             <div className="flex items-center gap-4">
@@ -77,7 +75,7 @@ export default function DashboardLayout({
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-8 bg-slate-50">
-          {children}
+          {enrolled ? children : <OnboardingEmptyState />}
         </main>
       </div>
     </div>

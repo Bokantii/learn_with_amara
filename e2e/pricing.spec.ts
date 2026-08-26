@@ -45,7 +45,7 @@ test('no obsolete package names are shown', async ({ page }) => {
 test('selecting a programme hands off to the existing checkout flow with currency', async ({ page }) => {
   await page.goto('/SignIn');
   await page.getByLabel('Email').fill('demo@iclp.com');
-  await page.getByLabel('Password').fill('demo1234');
+  await page.getByLabel('Password', { exact: true }).fill('demo1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 

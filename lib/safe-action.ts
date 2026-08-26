@@ -1,24 +1,24 @@
 import { createSafeActionClient } from 'next-safe-action';
-import { auth } from '../auth';
+import { getSessionUser } from './authz';
 
 const actionClient = createSafeActionClient();
 
 export const adminActionClient = actionClient.use(async ({ next }) => {
-  const session = await auth();
+  const user = await getSessionUser();
 
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!user || user.role !== 'ADMIN') {
     throw new Error('Unauthorized: admin access required.');
   }
 
-  return next({ ctx: { adminId: session.user.id } });
+  return next({ ctx: { adminId: user.id } });
 });
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const session = await auth();
+  const user = await getSessionUser();
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     throw new Error('You must be signed in to do that.');
   }
 
-  return next({ ctx: { userId: session.user.id } });
+  return next({ ctx: { userId: user.id } });
 });
