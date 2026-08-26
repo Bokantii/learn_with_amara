@@ -49,19 +49,50 @@ export const removeStudentAction = adminActionClient
     return { success: true };
   });
 
-const reassignProgramSchema = z.object({
+const enrollStudentSchema = z.object({
   studentId: z.string().min(1),
   programId: z.string().min(1),
 });
 
-export const reassignProgramAction = adminActionClient
-  .schema(reassignProgramSchema)
+export const enrollStudentAction = adminActionClient
+  .schema(enrollStudentSchema)
   .action(async ({ parsedInput }) => {
-    await prisma.enrollment.updateMany({
-      where: { userId: parsedInput.studentId },
-      data: { programId: parsedInput.programId },
+    try {
+      await prisma.enrollment.create({
+        data: { userId: parsedInput.studentId, programId: parsedInput.programId },
+      });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === 'P2002'
+      ) {
+        throw new Error('This student is already enrolled in that program.');
+      }
+      throw error;
+    }
+
+    revalidatePath('/admin/students');
+    revalidatePath('/admin');
+    return { success: true };
+  });
+
+const updateEnrollmentStatusSchema = z.object({
+  enrollmentId: z.string().min(1),
+  status: z.enum(['PENDING', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED']),
+});
+
+export const updateEnrollmentStatusAction = adminActionClient
+  .schema(updateEnrollmentStatusSchema)
+  .action(async ({ parsedInput }) => {
+    await prisma.enrollment.update({
+      where: { id: parsedInput.enrollmentId },
+      data: { status: parsedInput.status },
     });
 
     revalidatePath('/admin/students');
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/myprograms');
     return { success: true };
   });
