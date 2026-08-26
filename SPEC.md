@@ -1509,4 +1509,14 @@ Where useful, records should contain:
 - delivery status
 - relevant metadata
 
+## Known Deferred Issues
+
+Real gaps identified during implementation, explicitly deferred rather than silently dropped. Each should be scoped as its own task before being considered resolved.
+
+1. **Admin-created students have no credentials.** `addStudentAction` (admin Students page) creates a `User` row without setting `passwordHash`, so a student added directly by an admin currently has no way to sign in via Credentials — only Google/Facebook OAuth would work, and only if the email happens to match. Needs either a generated temporary password shown to the admin, or a proper invitation/set-password-via-email flow before this path is usable in production. Identified 2026-08-26 while building Phase 2 Task 1 (Programs/Enrollments); not fixed as part of that task.
+
+2. **Removing a student is a destructive hard delete.** `removeStudentAction` calls `prisma.user.delete()`, which cascades (`onDelete: Cascade`) to permanently erase the student's enrollments, submissions, and payment history. This conflicts with the "preserve historical academic/financial data" principle (§2.5, §11.2) — removal should be a safe deactivate/archive flow instead. Pre-existing before Phase 1; still unresolved.
+
+3. **Students with only COMPLETED enrollments see the onboarding empty state.** `hasActiveEnrollment()` (`lib/authz.ts`, added in Phase 1) checks `status: 'ACTIVE'` only. A student who has finished every program they were ever enrolled in (all enrollments `COMPLETED`, none `ACTIVE`) is routed to the "you're not enrolled yet" onboarding screen instead of a view of their program history. Needs a product decision on what "no active enrollment" should mean for a student with only completed/cancelled history, then a corresponding fix to the dashboard-layout gating logic. Identified 2026-08-26 during the Phase 2 Task 1 `EnrollmentStatus` extension; not fixed as part of that task.
+
 This history should support future administrative auditing and troubleshooting.
