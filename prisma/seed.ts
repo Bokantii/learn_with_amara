@@ -50,6 +50,10 @@ async function main() {
     { email: 'david.kim@example.com', name: 'David Kim', track: 'business-spanish', status: 'PAUSED' as const },
     { email: 'priya.nair@example.com', name: 'Priya Nair', track: 'hsk3-prep', status: 'ACTIVE' as const },
     { email: 'lucas.martin@example.com', name: 'Lucas Martin', track: 'tcf-exam-prep', status: 'ACTIVE' as const },
+    // Enrolled in tcf-exam-prep like aisha/lucas, but deliberately not added to TCF Morning
+    // Cohort (g1) below — a same-program, non-group-member fixture for group-scoped
+    // entitlement tests (e2e/liveclasses.spec.ts).
+    { email: 'noah.park@example.com', name: 'Noah Park', track: 'tcf-exam-prep', status: 'ACTIVE' as const },
   ];
 
   const studentPasswordHashDefault = await bcrypt.hash('student1234', 10);
@@ -248,7 +252,73 @@ async function main() {
     });
   }
 
-  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), 5 programs, 6 students, 2 groups, 4 assignments (1 group-scoped), 4 submissions, 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource.');
+  const liveClassSeeds = [
+    {
+      title: 'TCF Speaking Practice',
+      description: 'Open speaking practice session for all TCF Exam Preparation students.',
+      instructorName: 'Amarachi Nwankpa',
+      track: 'tcf-exam-prep',
+      groupKey: undefined as string | undefined,
+      startsAt: new Date('2026-09-05T16:00:00Z'),
+      endsAt: new Date('2026-09-05T17:30:00Z'),
+      status: 'SCHEDULED' as const,
+    },
+    {
+      title: 'Morning Cohort Grammar Review',
+      description: 'Weekly grammar review, TCF Morning Cohort only.',
+      instructorName: 'Amarachi Nwankpa',
+      track: 'tcf-exam-prep',
+      groupKey: 'g1',
+      startsAt: new Date('2026-09-08T13:00:00Z'),
+      endsAt: new Date('2026-09-08T14:00:00Z'),
+      status: 'SCHEDULED' as const,
+    },
+    {
+      title: 'TEF Weekend Writing Workshop',
+      description: null,
+      instructorName: 'Jean Laurent',
+      track: 'tef-canada-prep',
+      groupKey: undefined as string | undefined,
+      startsAt: new Date('2026-09-02T15:00:00Z'),
+      endsAt: new Date('2026-09-02T16:00:00Z'),
+      status: 'CANCELLED' as const,
+      cancellationReason: 'NETWORK_ISSUES' as const,
+      cancellationMessage:
+        "Today's class has been cancelled because the instructor is experiencing network issues.",
+    },
+    {
+      title: 'DELF B1 Oral Comprehension',
+      description: null,
+      instructorName: 'Sophie Martin',
+      track: 'delf-dalf-track',
+      groupKey: undefined as string | undefined,
+      startsAt: new Date('2026-08-20T14:00:00Z'),
+      endsAt: new Date('2026-08-20T15:00:00Z'),
+      status: 'COMPLETED' as const,
+    },
+  ];
+
+  for (const seed of liveClassSeeds) {
+    const existing = await prisma.liveClass.findFirst({ where: { title: seed.title } });
+    if (!existing) {
+      await prisma.liveClass.create({
+        data: {
+          programId: programs.get(seed.track)!,
+          groupId: seed.groupKey ? groups.get(seed.groupKey)! : undefined,
+          title: seed.title,
+          description: seed.description,
+          instructorName: seed.instructorName,
+          startsAt: seed.startsAt,
+          endsAt: seed.endsAt,
+          status: seed.status,
+          cancellationReason: 'cancellationReason' in seed ? seed.cancellationReason : undefined,
+          cancellationMessage: 'cancellationMessage' in seed ? seed.cancellationMessage : undefined,
+        },
+      });
+    }
+  }
+
+  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), 5 programs, 7 students, 2 groups, 4 assignments (1 group-scoped), 4 submissions, 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed).');
 }
 
 main()

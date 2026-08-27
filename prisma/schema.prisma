@@ -99,6 +99,7 @@ model Program {
   assignments Assignment[]
   groups      Group[]
   modules     Module[]
+  liveClasses LiveClass[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -217,6 +218,7 @@ model Group {
   program     Program           @relation(fields: [programId], references: [id])
   members     GroupMembership[]
   assignments Assignment[]
+  liveClasses LiveClass[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -234,6 +236,44 @@ model GroupMembership {
 
   @@unique([userId, groupId])
   @@map("group_memberships")
+}
+
+enum LiveClassStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum CancellationReason {
+  NETWORK_ISSUES
+  INSTRUCTOR_UNAVAILABLE
+  EMERGENCY
+  SCHEDULING_CONFLICT
+  OTHER
+}
+
+model LiveClass {
+  id                  String              @id @default(cuid())
+  programId           String              @map("program_id")
+  groupId             String?             @map("group_id")
+  title               String
+  description         String?
+  instructorName      String              @map("instructor_name")
+  startsAt            DateTime            @map("starts_at")
+  endsAt              DateTime            @map("ends_at")
+  meetingUrl          String?             @map("meeting_url")
+  status              LiveClassStatus     @default(SCHEDULED)
+  cancellationReason  CancellationReason? @map("cancellation_reason")
+  cancellationMessage String?             @map("cancellation_message")
+  rescheduledAt        DateTime?          @map("rescheduled_at")
+
+  program Program @relation(fields: [programId], references: [id])
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("live_classes")
 }
 
 enum SubmissionStatus {

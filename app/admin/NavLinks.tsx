@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, ClipboardList, GraduationCap, DollarSign, UsersRound, BookOpen,
+  LayoutDashboard, Users, ClipboardList, GraduationCap, DollarSign, UsersRound, BookOpen, Video,
 } from "lucide-react";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { path: "/admin/students", label: "Students", icon: Users },
   { path: "/admin/programs", label: "Programs", icon: BookOpen },
   { path: "/admin/groups", label: "Groups", icon: UsersRound },
+  { path: "/admin/liveclasses", label: "Live Classes", icon: Video },
   { path: "/admin/assignments", label: "Assignments", icon: ClipboardList },
   { path: "/admin/grading", label: "Grading", icon: GraduationCap },
   { path: "/admin/payments", label: "Payments", icon: DollarSign },

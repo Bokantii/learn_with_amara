@@ -295,7 +295,7 @@ export default function StudentsClient({
       </Card>
 
       <Dialog open={!!manageTarget} onOpenChange={(open) => !open && setManageTarget(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Enrollments — {manageTarget?.name}</DialogTitle>
           </DialogHeader>
