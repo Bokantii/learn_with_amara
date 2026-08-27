@@ -177,7 +177,78 @@ async function main() {
     }
   }
 
-  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), 5 programs, 6 students, 2 groups, 4 assignments (1 group-scoped), 4 submissions.');
+  const tcfProgramId = programs.get('tcf-exam-prep')!;
+  const existingModule = await prisma.module.findFirst({
+    where: { programId: tcfProgramId, title: 'Grammar Fundamentals' },
+  });
+  const grammarModule =
+    existingModule ??
+    (await prisma.module.create({
+      data: {
+        programId: tcfProgramId,
+        title: 'Grammar Fundamentals',
+        description: 'Core French grammar for the TCF exam.',
+        order: 0,
+      },
+    }));
+
+  const lessonSeeds = [
+    {
+      title: 'The Subjunctive Mood',
+      description: 'When and how to use the subjunctive in spoken and written French.',
+      order: 0,
+      durationMinutes: 45,
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      published: true,
+    },
+    {
+      title: 'Present Tense Conjugation',
+      description: 'Regular and irregular verb conjugation in the present tense.',
+      order: 1,
+      durationMinutes: 35,
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      published: true,
+    },
+    {
+      title: 'Advanced Verb Tenses (Draft)',
+      description: 'Passé composé vs. imparfait — still being recorded.',
+      order: 2,
+      durationMinutes: null,
+      videoUrl: null,
+      published: false,
+    },
+  ];
+
+  const lessonIdBySeedTitle = new Map<string, string>();
+  for (const seed of lessonSeeds) {
+    const existing = await prisma.lesson.findFirst({
+      where: { moduleId: grammarModule.id, title: seed.title },
+    });
+    const lesson =
+      existing ??
+      (await prisma.lesson.create({
+        data: { moduleId: grammarModule.id, ...seed },
+      }));
+    lessonIdBySeedTitle.set(seed.title, lesson.id);
+  }
+
+  const subjunctiveLessonId = lessonIdBySeedTitle.get('The Subjunctive Mood')!;
+  const existingResource = await prisma.lessonResource.findFirst({
+    where: { lessonId: subjunctiveLessonId, title: 'Subjunctive Conjugation Chart' },
+  });
+  if (!existingResource) {
+    await prisma.lessonResource.create({
+      data: {
+        lessonId: subjunctiveLessonId,
+        type: 'pdf',
+        title: 'Subjunctive Conjugation Chart',
+        url: 'https://example.com/resources/subjunctive-chart.pdf',
+        order: 0,
+      },
+    });
+  }
+
+  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), 5 programs, 6 students, 2 groups, 4 assignments (1 group-scoped), 4 submissions, 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource.');
 }
 
 main()

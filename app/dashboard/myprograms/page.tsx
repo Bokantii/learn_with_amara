@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionUser } from "../../../lib/authz";
 import { prisma } from "../../../lib/prisma";
 import { Card } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
-import { BookOpen } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Progress } from "../../../components/ui/progress";
+import { BookOpen, ChevronRight } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "pending",
@@ -33,6 +36,22 @@ export default async function MyPrograms() {
     orderBy: { joinedAt: "asc" },
   });
 
+  const withLessonCounts = await Promise.all(
+    enrollments.map(async (enrollment) => {
+      const lessonWhere = {
+        published: true,
+        module: { programId: enrollment.programId, active: true },
+      };
+      const [totalLessons, completedLessons] = await Promise.all([
+        prisma.lesson.count({ where: lessonWhere }),
+        prisma.lessonProgress.count({
+          where: { userId: user.id, status: "COMPLETED", lesson: lessonWhere },
+        }),
+      ]);
+      return { enrollment, totalLessons, completedLessons };
+    })
+  );
+
   return (
     <div className="space-y-6 px-2 sm:px-0">
       <div>
@@ -42,13 +61,13 @@ export default async function MyPrograms() {
         </p>
       </div>
 
-      {enrollments.length === 0 ? (
+      {withLessonCounts.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-slate-500">You&apos;re not enrolled in any programs yet.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {enrollments.map((enrollment) => (
+          {withLessonCounts.map(({ enrollment, totalLessons, completedLessons }) => (
             <Card key={enrollment.id} className="p-4 md:p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-3 md:gap-4">
@@ -68,14 +87,39 @@ export default async function MyPrograms() {
                   {STATUS_LABEL[enrollment.status]}
                 </Badge>
               </div>
-              <p className="text-xs md:text-sm text-slate-500">
-                Enrolled{" "}
-                {enrollment.joinedAt.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+
+              {totalLessons > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-xs md:text-sm mb-1.5">
+                    <span className="text-slate-600">
+                      {completedLessons}/{totalLessons} lessons completed
+                    </span>
+                    <span className="font-medium text-sky-600">
+                      {Math.round((completedLessons / totalLessons) * 100)}%
+                    </span>
+                  </div>
+                  <Progress value={(completedLessons / totalLessons) * 100} className="h-1.5 bg-slate-200" />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <p className="text-xs md:text-sm text-slate-500">
+                  Enrolled{" "}
+                  {enrollment.joinedAt.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                {enrollment.status !== "CANCELLED" && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/dashboard/course/${enrollment.programId}`}>
+                      View Lessons
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </Card>
           ))}
         </div>

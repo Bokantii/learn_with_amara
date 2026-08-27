@@ -13,7 +13,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "../../../components/ui/dialog";
-import { BookOpen, Pencil, Archive, ArchiveRestore } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, Pencil, Archive, ArchiveRestore, FolderOpen } from "lucide-react";
 import { createProgramAction, updateProgramAction, setProgramActiveAction } from "./actions";
 
 interface ProgramRow {
@@ -179,12 +180,18 @@ export default function ProgramsClient({
                   </TableCell>
                   <TableCell className="text-slate-500">{program.enrollmentCount}</TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => setEditTarget(program)}>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/programs/${program.id}`} aria-label={`Manage content for ${program.name}`}>
+                        <FolderOpen className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" aria-label={`Edit ${program.name}`} onClick={() => setEditTarget(program)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      aria-label={program.active ? `Archive ${program.name}` : `Restore ${program.name}`}
                       className={program.active ? "border-amber-300 text-amber-600 hover:bg-amber-50" : "border-emerald-300 text-emerald-600 hover:bg-emerald-50"}
                       onClick={() => handleToggleActive(program)}
                       disabled={isPending}

@@ -74,6 +74,7 @@ model User {
   submissions      Submission[]
   payments         Payment[]
   groupMemberships GroupMembership[]
+  lessonProgress   LessonProgress[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -97,11 +98,83 @@ model Program {
   enrollments Enrollment[]
   assignments Assignment[]
   groups      Group[]
+  modules     Module[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("programs")
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  programId   String  @map("program_id")
+  title       String
+  description String?
+  order       Int
+  active      Boolean @default(true)
+
+  program Program  @relation(fields: [programId], references: [id])
+  lessons Lesson[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("modules")
+}
+
+model Lesson {
+  id              String  @id @default(cuid())
+  moduleId        String  @map("module_id")
+  title           String
+  description     String?
+  order           Int
+  durationMinutes Int?    @map("duration_minutes")
+  videoUrl        String? @map("video_url")
+  published       Boolean @default(false)
+
+  module    Module           @relation(fields: [moduleId], references: [id])
+  resources LessonResource[]
+  progress  LessonProgress[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("lessons")
+}
+
+model LessonResource {
+  id       String @id @default(cuid())
+  lessonId String @map("lesson_id")
+  type     String // e.g. "link", "pdf" — matches Assignment.type convention
+  title    String
+  url      String
+  order    Int
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("lesson_resources")
+}
+
+enum LessonProgressStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model LessonProgress {
+  id          String               @id @default(cuid())
+  userId      String               @map("user_id")
+  lessonId    String               @map("lesson_id")
+  status      LessonProgressStatus @default(IN_PROGRESS)
+  startedAt   DateTime             @default(now()) @map("started_at")
+  completedAt DateTime?            @map("completed_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
 }
 
 model Enrollment {
