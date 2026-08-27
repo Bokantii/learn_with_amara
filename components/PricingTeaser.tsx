@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import ProgrammeCard from './ProgrammeCard';
 import { Button } from './ui/button';
 import { findProgrammeById, type Programme } from '../lib/programmes';
@@ -14,11 +15,8 @@ const HIGHLIGHT_IDS = [
 
 const TEASER_CURRENCY = 'CAD';
 
-interface PricingTeaserProps {
-  onNavigate: (page: string, planId?: string) => void;
-}
-
-export function PricingTeaser({ onNavigate }: PricingTeaserProps) {
+export function PricingTeaser() {
+  const router = useRouter();
   const highlights = HIGHLIGHT_IDS.map((id) => findProgrammeById(id)).filter(
     (p): p is Programme => Boolean(p)
   );
@@ -45,7 +43,7 @@ export function PricingTeaser({ onNavigate }: PricingTeaserProps) {
               highlightLabel={
                 programme.id === 'group-french-a0-a2' ? 'Most Popular' : undefined
               }
-              onSelect={() => onNavigate('pricing')}
+              onSelect={() => router.push('/Pricing')}
             />
           ))}
         </div>
@@ -55,7 +53,7 @@ export function PricingTeaser({ onNavigate }: PricingTeaserProps) {
             variant="outline"
             size="lg"
             className="border-2"
-            onClick={() => onNavigate('pricing')}
+            onClick={() => router.push('/Pricing')}
           >
             View Full Pricing &amp; Currencies
           </Button>

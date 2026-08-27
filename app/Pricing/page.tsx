@@ -1,7 +1,13 @@
-'use client';
+import type { Metadata } from 'next';
 import PricingExperience from './PricingExperience';
 import { Card, CardContent } from '../../components/ui/card';
 import { HelpCircle } from 'lucide-react';
+import { PublicShell } from '../../components/PublicShell';
+
+export const metadata: Metadata = {
+  title: 'Pricing | International Center for Language Proficiency',
+  description: 'Simple, transparent tuition for Group French, TEF/TCF exam prep, and Private programmes.',
+};
 
 const faqs = [
   {
@@ -34,12 +40,9 @@ const faqs = [
   },
 ];
 
-interface PricingPageProps {
-  onNavigate: (page: string, planId?: string) => void;
-}
-
-export default function Pricing({ onNavigate: _onNavigate }: PricingPageProps) {
+export default function Pricing() {
   return (
+    <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
@@ -86,20 +89,15 @@ export default function Pricing({ onNavigate: _onNavigate }: PricingPageProps) {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="mailto:support@iclp.com"
+              href="mailto:centerforlanguageproficiency@gmail.com"
               className="px-8 py-3 bg-white text-primary rounded-lg hover:bg-gray-100 transition-colors"
             >
               Contact Support
-            </a>
-            <a
-              href="#"
-              className="px-8 py-3 border-2 border-white rounded-lg hover:bg-white/10 transition-colors"
-            >
-              Schedule a Demo
             </a>
           </div>
         </div>
       </div>
     </div>
+    </PublicShell>
   );
 }

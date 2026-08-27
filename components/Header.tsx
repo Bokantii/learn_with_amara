@@ -1,28 +1,27 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from '../assets/logo.png';
 import { useLanguage } from '../lib/i18n/LanguageContext';
 import { translations } from '../lib/i18n/translations';
 
-interface HeaderProps {
-  onNavigate: (page: string) => void;
-  currentPage: string;
-}
-
-export function Header({ onNavigate, currentPage }: HeaderProps) {
+export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, toggleLanguage } = useLanguage();
   const copy = translations[language].header;
+  const pathname = usePathname();
 
   const navItems = [
-    { label: copy.nav.home, page: 'home' },
-    { label: copy.nav.courses, page: 'courses' },
-    { label: copy.nav.tcfTef, page: 'tcf-tef' },
-    { label: copy.nav.pricing, page: 'pricing' },
-    { label: copy.nav.blog, page: 'blog' },
+    { label: copy.nav.home, href: '/' },
+    { label: copy.nav.courses, href: '/Courses' },
+    { label: copy.nav.tcfTef, href: '/TCFTEFPrep' },
+    { label: copy.nav.pricing, href: '/Pricing' },
+    { label: copy.nav.blog, href: '/Blog' },
+    { label: copy.nav.about, href: '/about' },
   ];
 
   return (
@@ -30,29 +29,30 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <button 
-            onClick={() => onNavigate('home')}
+          <Link
+            href="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            {/* <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white">ICLP</span>
-            </div> */}
             <img src={logo.src} alt="ICLP Logo" className="w-18 h-18 object-contain" />
-            
-          </button>
+            <span className="hidden sm:inline text-sm lg:text-base font-medium text-foreground leading-tight">
+              International Center for
+              <br />
+              Language Proficiency
+            </span>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
-              <button
-                key={item.page}
-                onClick={() => onNavigate(item.page)}
+              <Link
+                key={item.href}
+                href={item.href}
                 className={`transition-colors hover:text-primary ${
-                  currentPage === item.page ? 'text-primary' : 'text-foreground'
+                  pathname === item.href ? 'text-primary' : 'text-foreground'
                 }`}
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
           </nav>
 
@@ -65,17 +65,11 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               <Globe className="w-4 h-4" />
               <span>{language}</span>
             </button>
-            <Button
-              variant="ghost"
-              onClick={() => onNavigate('signin')}
-            >
-              {copy.signIn}
+            <Button variant="ghost" asChild>
+              <Link href="/SignIn">{copy.signIn}</Link>
             </Button>
-            <Button
-              className="bg-accent hover:bg-accent/90"
-              onClick={() => onNavigate('home')}
-            >
-              {copy.getStarted}
+            <Button className="bg-accent hover:bg-accent/90" asChild>
+              <Link href="/Pricing">{copy.getStarted}</Link>
             </Button>
           </div>
 
@@ -98,20 +92,18 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
           <nav className="lg:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
               {navItems.map((item) => (
-                <button
-                  key={item.page}
-                  onClick={() => {
-                    onNavigate(item.page);
-                    setIsMenuOpen(false);
-                  }}
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
                   className={`text-left py-2 px-4 rounded-lg transition-colors ${
-                    currentPage === item.page
+                    pathname === item.href
                       ? 'bg-muted text-primary'
                       : 'hover:bg-muted'
                   }`}
                 >
                   {item.label}
-                </button>
+                </Link>
               ))}
               <div className="flex items-center gap-2 pt-4 border-t border-border">
                 <button
@@ -121,25 +113,16 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
                   <Globe className="w-4 h-4" />
                   <span>{language}</span>
                 </button>
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    onNavigate('signin');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  {copy.signIn}
+                <Button variant="outline" className="flex-1" asChild>
+                  <Link href="/SignIn" onClick={() => setIsMenuOpen(false)}>
+                    {copy.signIn}
+                  </Link>
                 </Button>
               </div>
-              <Button
-                className="bg-accent hover:bg-accent/90 w-full"
-                onClick={() => {
-                  onNavigate('home');
-                  setIsMenuOpen(false);
-                }}
-              >
-                {copy.getStarted}
+              <Button className="bg-accent hover:bg-accent/90 w-full" asChild>
+                <Link href="/Pricing" onClick={() => setIsMenuOpen(false)}>
+                  {copy.getStarted}
+                </Link>
               </Button>
             </div>
           </nav>

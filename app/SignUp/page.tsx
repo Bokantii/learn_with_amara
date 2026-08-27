@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
@@ -11,12 +12,9 @@ import { Separator } from "../../components/ui/separator";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
 import { signUpAction } from "./actions";
+import { PublicShell } from "../../components/PublicShell";
 
-interface SignUpProps {
-  onNavigate: (page: string) => void;
-}
-
-export default function SignUp({ onNavigate }: SignUpProps) {
+export default function SignUp() {
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -48,7 +46,7 @@ export default function SignUp({ onNavigate }: SignUpProps) {
       const signInResult = await signIn("credentials", { email, password, redirect: false });
       if (!signInResult || signInResult.error) {
         setError("Account created — please sign in.");
-        onNavigate("signin");
+        router.push("/SignIn");
         return;
       }
 
@@ -61,6 +59,7 @@ export default function SignUp({ onNavigate }: SignUpProps) {
   };
 
   return (
+    <PublicShell>
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-md mx-auto">
@@ -229,17 +228,15 @@ export default function SignUp({ onNavigate }: SignUpProps) {
                 <span className="text-muted-foreground">
                   Already have an account?{" "}
                 </span>
-                <button
-                  className="text-primary hover:underline"
-                  onClick={() => onNavigate("signin")}
-                >
+                <Link className="text-primary hover:underline" href="/SignIn">
                   Sign in instead
-                </button>
+                </Link>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
+    </PublicShell>
   );
 }

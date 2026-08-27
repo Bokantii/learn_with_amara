@@ -1,7 +1,14 @@
-'use client';
-import { Card, CardContent, CardHeader } from './../../components/ui/card';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Card, CardContent } from './../../components/ui/card';
 import { Button } from './../../components/ui/button';
 import { CheckCircle, BookOpen, Headphones, FileText, Video, Target, GraduationCap, Rocket } from 'lucide-react';
+import { PublicShell } from './../../components/PublicShell';
+
+export const metadata: Metadata = {
+  title: 'Exam Prep | International Center for Language Proficiency',
+  description: 'TCF, TEF, DELF and DALF exam preparation — mock exams, scoring strategy, and timed practice.',
+};
 
 const paths = [
   {
@@ -64,6 +71,7 @@ const mockExamBenefits = [
 
 export default function TCFTEFPrep() {
   return (
+    <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         {/* Hero Section */}
@@ -72,11 +80,11 @@ export default function TCFTEFPrep() {
             French Exam Preparation
           </h1>
           <p className="text-lg text-muted-foreground mb-6">
-            TCF, TEF, DELF, or DALF — whether you're starting French from scratch or already
-            speak it fluently, we'll get you ready for immigration, study, or work.
+            TCF, TEF, DELF, or DALF — whether you&apos;re starting French from scratch or already
+            speak it fluently, we&apos;ll get you ready for immigration, study, or work.
           </p>
-          <Button size="lg" className="bg-accent hover:bg-accent/90">
-            Start Your Preparation
+          <Button size="lg" className="bg-accent hover:bg-accent/90" asChild>
+            <Link href="/Pricing">Start Your Preparation</Link>
           </Button>
         </div>
 
@@ -84,7 +92,7 @@ export default function TCFTEFPrep() {
         <div className="mb-16">
           <h2 className="text-3xl text-center mb-4">Choose Your Path</h2>
           <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-            Whichever path you're on, you'll practice with the same real exam materials below.
+            Whichever path you&apos;re on, you&apos;ll practice with the same real exam materials below.
           </p>
           <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {paths.map((path, index) => (
@@ -97,8 +105,8 @@ export default function TCFTEFPrep() {
                   <p className="text-sm text-muted-foreground">
                     {path.description}
                   </p>
-                  <Button className="w-full bg-primary hover:bg-primary/90">
-                    {path.cta}
+                  <Button className="w-full bg-primary hover:bg-primary/90" asChild>
+                    <Link href="/Pricing">{path.cta}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -108,7 +116,7 @@ export default function TCFTEFPrep() {
 
         {/* What's Included */}
         <div className="mb-16">
-          <h2 className="text-3xl text-center mb-12">What's Included</h2>
+          <h2 className="text-3xl text-center mb-12">What&apos;s Included</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {examFeatures.map((feature, index) => (
               <Card key={index} className="border-2 hover:border-primary transition-colors">
@@ -134,7 +142,7 @@ export default function TCFTEFPrep() {
                 Practice with Mock Exams
               </h2>
               <p className="text-lg text-muted-foreground">
-                Our realistic mock exams simulate the actual test experience, helping you 
+                Our realistic mock exams simulate the actual test experience, helping you
                 build confidence and identify areas for improvement.
               </p>
               <ul className="space-y-3">
@@ -145,9 +153,14 @@ export default function TCFTEFPrep() {
                   </li>
                 ))}
               </ul>
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Take a Practice Exam
-              </Button>
+              <div className="space-y-2">
+                <Button size="lg" className="bg-primary hover:bg-primary/90" disabled>
+                  Take a Practice Exam
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Practice exams are launching in a future update — check back soon.
+                </p>
+              </div>
             </div>
             <div className="bg-white rounded-xl p-8 shadow-xl">
               <h3 className="text-2xl mb-6">TCF/TEF Scoring Guide</h3>
@@ -179,12 +192,13 @@ export default function TCFTEFPrep() {
             <h3 className="text-xl mb-2">Prefer DELF/DALF instead?</h3>
             <p className="text-muted-foreground">
               DELF and DALF work differently: each level — A1, A2, B1, B2 (DELF) or C1, C2 (DALF)
-              — is its own diploma. Pass one, and it's yours for life, with no expiry and no need
+              — is its own diploma. Pass one, and it&apos;s yours for life, with no expiry and no need
               to retake other levels.
             </p>
           </div>
         </div>
       </div>
     </div>
+    </PublicShell>
   );
 }

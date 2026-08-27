@@ -1,8 +1,15 @@
-'use client';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Clock, Users, Award, BookOpen, Target, GraduationCap, Rocket } from 'lucide-react';
+import { Clock, Award, BookOpen, Target, GraduationCap, Rocket } from 'lucide-react';
+import { PublicShell } from '../../components/PublicShell';
+
+export const metadata: Metadata = {
+  title: 'Courses | International Center for Language Proficiency',
+  description: 'Choose a French learning track: beginner to fluent, or focused TCF/TEF/DELF/DALF exam prep.',
+};
 
 const tracks = [
   {
@@ -11,7 +18,6 @@ const tracks = [
     name: 'Beginner to TCF/TEF',
     description: 'Starting from scratch? Build real French fluency step by step, then transition straight into exam prep.',
     levels: 'A0 - C1',
-    students: '15K+',
     duration: '9-12 months',
     exams: 'TEF, TCF',
     color: 'bg-blue-50 border-blue-200',
@@ -22,7 +28,6 @@ const tracks = [
     name: 'TCF/TEF Exam Prep Only',
     description: 'Already speak French? Skip straight to focused exam prep — mock exams, scoring strategy, and timed practice.',
     levels: 'B2 - C2 (exam-ready)',
-    students: '8K+',
     duration: '6-8 weeks',
     exams: 'TEF, TCF',
     color: 'bg-amber-50 border-amber-200',
@@ -33,7 +38,6 @@ const tracks = [
     name: 'Beginner to DELF/DALF',
     description: 'Starting from scratch? Build real French fluency from A1 through your target DELF or DALF level.',
     levels: 'A1 - C2',
-    students: '6K+',
     duration: '9-12 months',
     exams: 'DELF, DALF',
     color: 'bg-emerald-50 border-emerald-200',
@@ -44,19 +48,15 @@ const tracks = [
     name: 'DELF/DALF Exam Prep Only',
     description: 'Already speak French? Skip straight to focused DELF or DALF exam prep — practice exams, scoring strategy, and timed sections.',
     levels: 'B1 - C2 (exam-ready)',
-    students: '4K+',
     duration: '6-8 weeks',
     exams: 'DELF, DALF',
     color: 'bg-purple-50 border-purple-200',
   },
 ];
 
-interface CoursesProps {
-  onNavigate: (page: string, planId?: string) => void;
-}
-
-export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>) {
+export default function Courses() {
   return (
+    <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
@@ -65,7 +65,7 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
           </h1>
           <p className="text-lg text-muted-foreground">
             We focus on one thing: French — for the TCF, TEF, DELF, and DALF exams. Pick the
-            track that matches where you're starting from and the exam you need.
+            track that matches where you&apos;re starting from and the exam you need.
           </p>
         </div>
 
@@ -88,10 +88,6 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
               <CardContent className="p-6 pt-0 space-y-4">
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span>{track.students} students</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4" />
                     <span>{track.duration} average</span>
                   </div>
@@ -100,11 +96,8 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
                     <span>Exam prep: {track.exams}</span>
                   </div>
                 </div>
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90"
-                  onClick={() => onNavigate('pricing')}
-                >
-                  Start Learning
+                <Button className="w-full bg-primary hover:bg-primary/90" asChild>
+                  <Link href="/Pricing">Start Learning</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -112,5 +105,6 @@ export default function Courses({ onNavigate = () => {} }: Partial<CoursesProps>
         </div>
       </div>
     </div>
+    </PublicShell>
   );
 }

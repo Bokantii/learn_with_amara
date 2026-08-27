@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function goToPricing(page: import('@playwright/test').Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Pricing', exact: true }).first().click();
+  await page.getByRole('link', { name: 'Pricing', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Simple, Transparent Tuition' })).toBeVisible();
 }
 
@@ -19,7 +19,7 @@ test('switching currency updates every visible price without navigation', async 
   await expect(page.getByRole('radio', { name: 'NGN', exact: true })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByText('₦350,000')).toBeVisible();
   await expect(page.getByText('Paid Once', { exact: true })).toBeVisible();
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/Pricing');
 });
 
 test('currency selection persists across category tabs and reloads', async ({ page }) => {

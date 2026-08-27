@@ -317,3 +317,11 @@ model Payment {
 
   @@map("payments")
 }
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter_subscribers")
+}

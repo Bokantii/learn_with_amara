@@ -28,6 +28,10 @@ const signUpLimiter = redis
   ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, '60 s'), prefix: 'ratelimit:signup' })
   : null;
 
+const newsletterLimiter = redis
+  ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, '60 s'), prefix: 'ratelimit:newsletter' })
+  : null;
+
 export type RateLimitResult = { success: boolean; remaining: number; reset: number };
 
 async function check(limiter: Ratelimit | null, key: string): Promise<RateLimitResult> {
@@ -44,6 +48,10 @@ export function checkLoginRateLimit(key: string) {
 
 export function checkSignUpRateLimit(key: string) {
   return check(signUpLimiter, key);
+}
+
+export function checkNewsletterRateLimit(key: string) {
+  return check(newsletterLimiter, key);
 }
 
 export function getClientIp(requestHeaders: Headers): string {

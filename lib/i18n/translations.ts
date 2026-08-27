@@ -4,7 +4,7 @@ export const translations: Record<
   Language,
   {
     header: {
-      nav: { home: string; courses: string; tcfTef: string; pricing: string; blog: string };
+      nav: { home: string; courses: string; tcfTef: string; pricing: string; blog: string; about: string };
       signIn: string;
       getStarted: string;
     };
@@ -14,21 +14,26 @@ export const translations: Record<
       quickLinks: { about: string; community: string; terms: string; privacy: string };
       contactHeading: string;
       email: string;
-      phone: string;
-      supportHours: string;
+      canadaContact: string;
+      nigeriaContact: string;
       newsletterHeading: string;
       newsletterDescription: string;
       emailPlaceholder: string;
-      copyright: string;
+      newsletterInputLabel: string;
+      newsletterSubmit: string;
+      newsletterSuccess: string;
+      newsletterAlreadySubscribed: string;
+      newsletterError: string;
+      rightsReserved: string;
     };
     hero: {
       title: string;
       subtitle: string;
       getStarted: string;
       exploreCourses: string;
-      activeLearners: string;
+      communityTagline: string;
       tracks: string;
-      successRate: string;
+      examConfidence: string;
       imageAlt: string;
     };
     featureBlocks: {
@@ -65,6 +70,7 @@ export const translations: Record<
         tcfTef: 'Exam Prep',
         pricing: 'Pricing',
         blog: 'Blog',
+        about: 'About',
       },
       signIn: 'Sign In',
       getStarted: 'Get Started',
@@ -79,13 +85,18 @@ export const translations: Record<
         privacy: 'Privacy Policy',
       },
       contactHeading: 'Contact',
-      email: 'Email: info@iclp.com',
-      phone: 'Phone: +1 (555) 123-4567',
-      supportHours: 'Support Hours: 24/7',
+      email: 'Email: centerforlanguageproficiency@gmail.com',
+      canadaContact: 'Canada: +1 (437) 291-8783 (Phone & WhatsApp)',
+      nigeriaContact: 'Nigeria: +234 813 040 8788 (Phone & WhatsApp)',
       newsletterHeading: 'Newsletter',
       newsletterDescription: 'Subscribe to get updates on new courses and features.',
       emailPlaceholder: 'Enter your email',
-      copyright: '© 2025 ICLP. All rights reserved.',
+      newsletterInputLabel: 'Subscribe to newsletter',
+      newsletterSubmit: 'Subscribe',
+      newsletterSuccess: "You're on the list!",
+      newsletterAlreadySubscribed: "You're already subscribed.",
+      newsletterError: 'Something went wrong. Please try again.',
+      rightsReserved: 'All rights reserved.',
     },
     hero: {
       title: 'Master French. Ace TCF, TEF, DELF & DALF.',
@@ -93,9 +104,9 @@ export const translations: Record<
         "From your first bonjour to exam day — start the beginner-to-fluent track, or jump straight into focused exam prep for TCF, TEF, DELF, or DALF.",
       getStarted: 'Get Started',
       exploreCourses: 'Explore Courses',
-      activeLearners: 'Active Learners',
+      communityTagline: 'A growing community of language learners',
       tracks: 'Learning Tracks',
-      successRate: 'Success Rate',
+      examConfidence: 'Helping learners prepare for TCF, TEF, DELF & DALF with confidence',
       imageAlt: 'Adults learning French online on laptops and tablets, preparing for the TCF, TEF, DELF, and DALF exams',
     },
     featureBlocks: {
@@ -208,6 +219,7 @@ export const translations: Record<
         tcfTef: 'Préparation aux examens',
         pricing: 'Tarifs',
         blog: 'Blog',
+        about: 'À propos',
       },
       signIn: 'Se connecter',
       getStarted: 'Commencer',
@@ -223,14 +235,19 @@ export const translations: Record<
         privacy: 'Politique de confidentialité',
       },
       contactHeading: 'Contact',
-      email: 'E-mail : info@iclp.com',
-      phone: 'Téléphone : +1 (555) 123-4567',
-      supportHours: 'Support : 24/7',
+      email: 'E-mail : centerforlanguageproficiency@gmail.com',
+      canadaContact: 'Canada : +1 (437) 291-8783 (téléphone et WhatsApp)',
+      nigeriaContact: 'Nigéria : +234 813 040 8788 (téléphone et WhatsApp)',
       newsletterHeading: 'Newsletter',
       newsletterDescription:
         'Abonnez-vous pour recevoir des mises à jour sur les nouveaux cours et fonctionnalités.',
       emailPlaceholder: 'Entrez votre e-mail',
-      copyright: '© 2025 ICLP. Tous droits réservés.',
+      newsletterInputLabel: "S'abonner à la newsletter",
+      newsletterSubmit: "S'abonner",
+      newsletterSuccess: 'Inscription réussie !',
+      newsletterAlreadySubscribed: 'Vous êtes déjà abonné(e).',
+      newsletterError: "Une erreur s'est produite. Veuillez réessayer.",
+      rightsReserved: 'Tous droits réservés.',
     },
     hero: {
       title: 'Maîtrisez le français. Réussissez le TCF, le TEF, le DELF ou le DALF.',
@@ -238,9 +255,9 @@ export const translations: Record<
         "De votre premier bonjour au jour de l'examen — suivez le parcours débutant à courant, ou passez directement à une préparation ciblée au TCF, au TEF, au DELF ou au DALF.",
       getStarted: 'Commencer',
       exploreCourses: 'Découvrir les cours',
-      activeLearners: 'Apprenants actifs',
+      communityTagline: "Une communauté grandissante d'apprenants en langues",
       tracks: "Parcours d'apprentissage",
-      successRate: 'Taux de réussite',
+      examConfidence: 'Aider les apprenants à préparer le TCF, le TEF, le DELF et le DALF en toute confiance',
       imageAlt: 'Adultes apprenant le français en ligne sur ordinateurs portables et tablettes, en préparation aux examens TCF, TEF, DELF et DALF',
     },
     featureBlocks: {

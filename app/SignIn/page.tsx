@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { signIn, getSession } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
@@ -10,9 +11,7 @@ import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
-interface SignInProps {
-  onNavigate?: (page: string) => void;
-}
+import { PublicShell } from "../../components/PublicShell";
 
 function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
   const searchParams = useSearchParams();
@@ -27,7 +26,7 @@ function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
   return null;
 }
 
-export default function SignIn({ onNavigate = () => {} }: SignInProps) {
+export default function SignIn() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +62,7 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
   };
 
   return (
+    <PublicShell>
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <Suspense fallback={null}>
         <OAuthErrorBanner onError={setError} />
@@ -194,19 +194,17 @@ export default function SignIn({ onNavigate = () => {} }: SignInProps) {
 
               <div className="text-center text-sm">
                 <span className="text-muted-foreground">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                 </span>
-                <button
-                  className="text-primary hover:underline"
-                  onClick={() => onNavigate("signup")}
-                >
+                <Link className="text-primary hover:underline" href="/SignUp">
                   Sign up for free
-                </button>
+                </Link>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
+    </PublicShell>
   );
 }
