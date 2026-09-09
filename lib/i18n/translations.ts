@@ -31,10 +31,16 @@ export const translations: Record<
       subtitle: string;
       getStarted: string;
       exploreCourses: string;
+      testLevel: string;
       communityTagline: string;
       tracks: string;
       examConfidence: string;
       imageAlt: string;
+    };
+    placementCallout: {
+      heading: string;
+      body: string;
+      cta: string;
     };
     featureBlocks: {
       heading: string;
@@ -104,10 +110,16 @@ export const translations: Record<
         "From your first bonjour to exam day — start the beginner-to-fluent track, or jump straight into focused exam prep for TCF, TEF, DELF, or DALF.",
       getStarted: 'Get Started',
       exploreCourses: 'Explore Courses',
+      testLevel: 'or test your French level free →',
       communityTagline: 'A growing community of language learners',
       tracks: 'Learning Tracks',
-      examConfidence: 'Helping learners prepare for TCF, TEF, DELF & DALF with confidence',
+      examConfidence: 'Focused prep for TCF, TEF, DELF & DALF',
       imageAlt: 'Adults learning French online on laptops and tablets, preparing for the TCF, TEF, DELF, and DALF exams',
+    },
+    placementCallout: {
+      heading: 'Test Your French Level — Free',
+      body: 'A short placement test — about 10 minutes, no signup needed. Get an estimated CEFR level and a recommended path.',
+      cta: 'Start the placement test',
     },
     featureBlocks: {
       heading: 'Everything You Need to Pass Your French Exam',
@@ -255,10 +267,16 @@ export const translations: Record<
         "De votre premier bonjour au jour de l'examen — suivez le parcours débutant à courant, ou passez directement à une préparation ciblée au TCF, au TEF, au DELF ou au DALF.",
       getStarted: 'Commencer',
       exploreCourses: 'Découvrir les cours',
+      testLevel: 'ou évaluez votre niveau de français gratuitement →',
       communityTagline: "Une communauté grandissante d'apprenants en langues",
       tracks: "Parcours d'apprentissage",
-      examConfidence: 'Aider les apprenants à préparer le TCF, le TEF, le DELF et le DALF en toute confiance',
+      examConfidence: 'Préparation ciblée au TCF, TEF, DELF et DALF',
       imageAlt: 'Adultes apprenant le français en ligne sur ordinateurs portables et tablettes, en préparation aux examens TCF, TEF, DELF et DALF',
+    },
+    placementCallout: {
+      heading: 'Évaluez votre niveau de français — gratuitement',
+      body: "Un court test de positionnement — environ 10 minutes, sans inscription. Obtenez un niveau CECR estimé et un parcours recommandé.",
+      cta: 'Commencer le test de positionnement',
     },
     featureBlocks: {
       heading: "Tout ce qu'il faut pour réussir votre examen de français",

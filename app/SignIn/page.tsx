@@ -26,6 +26,35 @@ function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
   return null;
 }
 
+/**
+ * Only accept a same-origin relative path (e.g. the attendance check-in URL) as
+ * a post-login destination — never an absolute or protocol-relative URL — so
+ * `?callbackUrl=` can't be used as an open redirect.
+ */
+function safeCallbackUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return null;
+  if (raw.includes("\\") || /[\r\n\t]/.test(raw)) return null;
+  try {
+    const base = "http://internal.invalid";
+    if (new URL(raw, base).origin !== base) return null;
+  } catch {
+    return null;
+  }
+  return raw;
+}
+
+function CallbackUrlReader({ onResolve }: { onResolve: (url: string | null) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    onResolve(safeCallbackUrl(searchParams.get("callbackUrl")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
+}
+
 export default function SignIn() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -33,6 +62,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +83,8 @@ export default function SignIn() {
         return;
       }
       const session = await getSession();
-      router.push(session?.user?.role === "ADMIN" ? "/admin" : "/dashboard");
+      const roleDestination = session?.user?.role === "ADMIN" ? "/admin" : "/dashboard";
+      router.push(callbackUrl ?? roleDestination);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -66,6 +97,7 @@ export default function SignIn() {
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <Suspense fallback={null}>
         <OAuthErrorBanner onError={setError} />
+        <CallbackUrlReader onResolve={setCallbackUrl} />
       </Suspense>
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-md mx-auto">
@@ -153,7 +185,7 @@ export default function SignIn() {
                   type="button"
                   variant="outline"
                   className="h-12"
-                  onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                  onClick={() => signIn("google", { callbackUrl: callbackUrl ?? "/dashboard" })}
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
@@ -179,7 +211,7 @@ export default function SignIn() {
                   type="button"
                   variant="outline"
                   className="h-12"
-                  onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
+                  onClick={() => signIn("facebook", { callbackUrl: callbackUrl ?? "/dashboard" })}
                 >
                   <svg
                     className="w-5 h-5 mr-2"

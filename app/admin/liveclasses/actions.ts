@@ -2,14 +2,31 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import { adminActionClient } from '../../../lib/safe-action';
 import { prisma } from '../../../lib/prisma';
+import {
+  sendLiveClassCancellation,
+  sendLiveClassReschedule,
+} from '../../../lib/notifications/liveclass';
 
 async function assertGroupBelongsToProgram(groupId: string | undefined, programId: string) {
   if (!groupId) return;
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.programId !== programId) {
     throw new Error('Selected group does not belong to the selected program.');
+  }
+}
+
+/** Fire a class-communication send without letting a delivery failure roll back or mask the persisted state change. */
+async function notifySafely(
+  run: () => Promise<unknown>,
+  context: { action: string; liveClassId: string }
+): Promise<void> {
+  try {
+    await run();
+  } catch (error) {
+    Sentry.captureException(error, { extra: context });
   }
 }
 
@@ -21,7 +38,13 @@ const liveClassFieldsSchema = z.object({
   instructorName: z.string().trim().min(1, 'Instructor is required'),
   startsAt: z.string().min(1, 'Start time is required'),
   endsAt: z.string().min(1, 'End time is required'),
-  meetingUrl: z.string().trim().url('Enter a valid URL').optional().or(z.literal('')),
+  meetingUrl: z
+    .string()
+    .trim()
+    .url('Enter a valid URL')
+    .refine((v) => /^https?:\/\//i.test(v), 'Meeting URL must start with http:// or https://')
+    .optional()
+    .or(z.literal('')),
 });
 
 function parseAndValidateTimes(startsAt: string, endsAt: string) {
@@ -62,6 +85,7 @@ export const createLiveClassAction = adminActionClient
 
 const updateLiveClassSchema = liveClassFieldsSchema.extend({
   liveClassId: z.string().min(1),
+  notifyStudents: z.boolean().optional().default(true),
 });
 
 export const updateLiveClassAction = adminActionClient
@@ -70,12 +94,17 @@ export const updateLiveClassAction = adminActionClient
     const existing = await prisma.liveClass.findUniqueOrThrow({
       where: { id: parsedInput.liveClassId },
     });
+    if (existing.status !== 'SCHEDULED') {
+      throw new Error('Only scheduled classes can be edited.');
+    }
 
     await assertGroupBelongsToProgram(parsedInput.groupId, parsedInput.programId);
     const { start, end } = parseAndValidateTimes(parsedInput.startsAt, parsedInput.endsAt);
 
-    const rescheduled =
-      start.getTime() !== existing.startsAt.getTime() || end.getTime() !== existing.endsAt.getTime();
+    // A reschedule is a change to the START time — that is what invalidates the
+    // pending reminder and what students are notified about. An end-time-only
+    // edit (correcting the duration) is not a reschedule.
+    const rescheduled = start.getTime() !== existing.startsAt.getTime();
 
     await prisma.liveClass.update({
       where: { id: parsedInput.liveClassId },
@@ -92,6 +121,13 @@ export const updateLiveClassAction = adminActionClient
       },
     });
 
+    if (rescheduled && parsedInput.notifyStudents) {
+      await notifySafely(
+        () => sendLiveClassReschedule(parsedInput.liveClassId),
+        { action: 'reschedule', liveClassId: parsedInput.liveClassId }
+      );
+    }
+
     revalidatePath('/admin/liveclasses');
     revalidatePath('/dashboard/liveclasses');
     return { success: true, rescheduled };
@@ -107,11 +143,20 @@ const cancelLiveClassSchema = z.object({
     'OTHER',
   ]),
   cancellationMessage: z.string().trim().optional(),
+  notifyStudents: z.boolean().optional().default(true),
 });
 
 export const cancelLiveClassAction = adminActionClient
   .schema(cancelLiveClassSchema)
   .action(async ({ parsedInput }) => {
+    const existing = await prisma.liveClass.findUniqueOrThrow({
+      where: { id: parsedInput.liveClassId },
+      select: { status: true },
+    });
+    if (existing.status !== 'SCHEDULED') {
+      throw new Error('Only scheduled classes can be cancelled.');
+    }
+
     await prisma.liveClass.update({
       where: { id: parsedInput.liveClassId },
       data: {
@@ -120,6 +165,13 @@ export const cancelLiveClassAction = adminActionClient
         cancellationMessage: parsedInput.cancellationMessage || null,
       },
     });
+
+    if (parsedInput.notifyStudents) {
+      await notifySafely(
+        () => sendLiveClassCancellation(parsedInput.liveClassId),
+        { action: 'cancel', liveClassId: parsedInput.liveClassId }
+      );
+    }
 
     revalidatePath('/admin/liveclasses');
     revalidatePath('/dashboard/liveclasses');

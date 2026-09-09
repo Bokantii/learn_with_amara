@@ -32,6 +32,25 @@ const newsletterLimiter = redis
   ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, '60 s'), prefix: 'ratelimit:newsletter' })
   : null;
 
+const attendanceCheckInLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, '60 s'),
+      prefix: 'ratelimit:attendance-checkin',
+    })
+  : null;
+
+const assessmentAttemptLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, '60 s'),
+      prefix: 'ratelimit:assessment-attempt',
+    })
+  : null;
+
+/** Whether a real Upstash backend is wired up. When false, every `check()` allows. */
+export const rateLimitConfigured = redis != null;
+
 export type RateLimitResult = { success: boolean; remaining: number; reset: number };
 
 async function check(limiter: Ratelimit | null, key: string): Promise<RateLimitResult> {
@@ -52,6 +71,15 @@ export function checkSignUpRateLimit(key: string) {
 
 export function checkNewsletterRateLimit(key: string) {
   return check(newsletterLimiter, key);
+}
+
+export function checkAttendanceCheckInRateLimit(key: string) {
+  return check(attendanceCheckInLimiter, key);
+}
+
+/** Limits how often a user can start a fresh assessment attempt. */
+export function checkAssessmentAttemptRateLimit(key: string) {
+  return check(assessmentAttemptLimiter, key);
 }
 
 export function getClientIp(requestHeaders: Headers): string {

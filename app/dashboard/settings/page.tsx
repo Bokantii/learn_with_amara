@@ -24,7 +24,7 @@ const notificationItems = [
   {
     id: "live",
     label: "Live Class Reminders",
-    desc: "Reminders 30 minutes before live classes",
+    desc: "Reminders 1 hour before live classes",
     defaultOn: true,
   },
   {

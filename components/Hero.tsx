@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { GraduationCap, Users, BadgeCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useLanguage } from '../lib/i18n/LanguageContext';
@@ -38,18 +39,34 @@ export function Hero() {
                 <Link href="/Courses">{copy.exploreCourses}</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-6 pt-4">
-              <div className="space-y-1">
-                <div className="text-3xl text-primary">4</div>
-                <div className="text-sm text-muted-foreground">{copy.tracks}</div>
-              </div>
-              <div className="space-y-1 max-w-xs">
-                <div className="text-sm text-muted-foreground">{copy.communityTagline}</div>
-              </div>
-              <div className="space-y-1 max-w-xs">
-                <div className="text-sm text-muted-foreground">{copy.examConfidence}</div>
-              </div>
-            </div>
+            <Link
+              href="/assessments/placement"
+              className="inline-block text-sm font-medium text-sky-600 hover:text-sky-700 hover:underline"
+            >
+              {copy.testLevel}
+            </Link>
+            <ul className="mt-2 grid list-none gap-px overflow-hidden rounded-2xl border border-sky-100 bg-sky-100/70 p-0 shadow-sm sm:grid-cols-3">
+              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                  <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="text-sm leading-snug text-muted-foreground">
+                  <span className="text-lg font-semibold text-primary">4</span> {copy.tracks}
+                </span>
+              </li>
+              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                  <Users className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="text-sm leading-snug text-muted-foreground">{copy.communityTagline}</span>
+              </li>
+              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                  <BadgeCheck className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="text-sm leading-snug text-muted-foreground">{copy.examConfidence}</span>
+              </li>
+            </ul>
           </div>
 
           {/* Image */}

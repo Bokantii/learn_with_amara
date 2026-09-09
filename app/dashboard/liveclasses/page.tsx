@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "../../../lib/authz";
 import { prisma } from "../../../lib/prisma";
+import { VISIBLE_ENROLLMENT_STATUSES } from "../../../lib/live-class-entitlement";
 import LiveClassesClient from "./LiveClassesClient";
 
 export default async function LiveClassesPage() {
@@ -9,16 +10,17 @@ export default async function LiveClassesPage() {
     redirect("/SignIn");
   }
 
-  // Authoritative live-class entitlement rule (single source of truth — do not
-  // duplicate this logic elsewhere): a student may see a live class if they have
-  // a non-cancelled enrollment in its Program (matches lib/authz.ts#hasProgramAccess'
-  // semantics, expressed here as a bulk "which programs am I in" query since this
-  // is a list page, not a per-record check), AND — for group-scoped classes only —
-  // are currently a member of that specific Group. Group membership alone is never
-  // sufficient, since a stale GroupMembership row (e.g. after enrollment is later
-  // cancelled) must not keep granting access on its own.
+  // Authoritative live-class entitlement rule (single source of truth): a student
+  // may see a live class if they have an enrollment in its Program with a VISIBLE
+  // status, AND — for group-scoped classes only — are currently a member of that
+  // specific Group. Group membership alone is never sufficient (a stale
+  // GroupMembership must not keep granting access after the enrollment is gone).
+  // The resolve-by-class inverse of this rule lives in
+  // lib/live-class-entitlement.ts#entitledUserIdsForLiveClass and is shared with
+  // the notification recipient resolver — which deliberately uses the NARROWER
+  // NOTIFY_ENROLLMENT_STATUSES (push email is not the same as dashboard visibility).
   const enrollments = await prisma.enrollment.findMany({
-    where: { userId: user.id, status: { not: "CANCELLED" } },
+    where: { userId: user.id, status: { in: VISIBLE_ENROLLMENT_STATUSES } },
     select: { programId: true },
   });
   const programIds = enrollments.map((e) => e.programId);

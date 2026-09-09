@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Video, PlayCircle,
-  ClipboardList, BarChart3, CreditCard,
+  ClipboardList, BarChart3, CreditCard, CalendarCheck, FileQuestion,
   Settings as SettingsIcon,
 } from "lucide-react";
 
@@ -12,6 +12,8 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/dashboard/myprograms", label: "My Programs", icon: BookOpen },
   { path: "/dashboard/liveclasses", label: "Live Classes", icon: Video },
+  { path: "/attendance", label: "Attendance", icon: CalendarCheck },
+  { path: "/assessments", label: "Practice Tests", icon: FileQuestion },
   { path: "/dashboard/recordedlessons", label: "Recorded Lessons", icon: PlayCircle },
   { path: "/dashboard/assignments", label: "Assignments", icon: ClipboardList },
   { path: "/dashboard/results", label: "Results", icon: BarChart3 },

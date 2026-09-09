@@ -154,11 +154,11 @@ export default function TCFTEFPrep() {
                 ))}
               </ul>
               <div className="space-y-2">
-                <Button size="lg" className="bg-primary hover:bg-primary/90" disabled>
-                  Take a Practice Exam
+                <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
+                  <Link href="/assessments/placement">Take the Placement Test</Link>
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  Practice exams are launching in a future update — check back soon.
+                  A short diagnostic that estimates your CEFR level and recommends where to start.
                 </p>
               </div>
             </div>

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import { Bell, User } from "lucide-react";
+import { User } from "lucide-react";
 import { getSessionUser, hasActiveEnrollment } from "../../lib/authz";
+import { getUnreadNotificationCount, getRecentNotifications } from "../../lib/notifications/queries";
+import { NotificationBell } from "../../components/NotificationBell";
 import NavLinks from "./NavLinks";
 import OnboardingEmptyState from "./OnboardingEmptyState";
 
@@ -18,6 +20,10 @@ export default async function DashboardLayout({
   const enrolled = await hasActiveEnrollment(user.id);
   const displayName = user.name ?? user.email ?? "there";
   const firstName = displayName.split(" ")[0];
+  const [unreadCount, notifications] = await Promise.all([
+    getUnreadNotificationCount(user.id),
+    getRecentNotifications(user.id),
+  ]);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -62,13 +68,15 @@ export default async function DashboardLayout({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Welcome back, {firstName}!</h2>
-              <p className="text-sm text-slate-500 mt-1">Let's continue your learning journey</p>
+              <p className="text-sm text-slate-500 mt-1">Let&apos;s continue your learning journey</p>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <Bell className="w-5 h-5 text-slate-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-cyan-500 rounded-full"></span>
-              </button>
+              <NotificationBell
+                unreadCount={unreadCount}
+                notifications={notifications}
+                linkHref="/dashboard/liveclasses"
+                dotClassName="bg-cyan-500"
+              />
             </div>
           </div>
         </header>

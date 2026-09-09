@@ -11,7 +11,6 @@ datasource db {
 // Shape follows https://authjs.dev/getting-started/adapters/prisma exactly,
 // so @auth/prisma-adapter works without customization.
 
-
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
@@ -65,7 +64,7 @@ model User {
   email         String    @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
-  passwordHash  String?   // null for OAuth-only accounts (Google/Facebook)
+  passwordHash  String? // null for OAuth-only accounts (Google/Facebook)
   role          Role      @default(STUDENT)
 
   accounts         Account[]
@@ -75,6 +74,14 @@ model User {
   payments         Payment[]
   groupMemberships GroupMembership[]
   lessonProgress   LessonProgress[]
+  notifications    Notification[]
+
+  attendanceSessionsCreated AttendanceSession[] @relation("AttendanceSessionsCreated")
+  attendanceRecords         AttendanceRecord[]  @relation("AttendanceRecordsAsStudent")
+  attendanceOverrides       AttendanceRecord[]  @relation("AttendanceRecordsOverriddenBy")
+
+  assessmentAttempts        AssessmentAttempt[]
+  assessmentResponsesGraded AssessmentResponse[] @relation("AssessmentResponsesGraded")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -100,6 +107,7 @@ model Program {
   groups      Group[]
   modules     Module[]
   liveClasses LiveClass[]
+  assessments Assessment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -211,9 +219,9 @@ model Assignment {
 }
 
 model Group {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   name      String
-  programId String   @map("program_id")
+  programId String @map("program_id")
 
   program     Program           @relation(fields: [programId], references: [id])
   members     GroupMembership[]
@@ -265,10 +273,13 @@ model LiveClass {
   status              LiveClassStatus     @default(SCHEDULED)
   cancellationReason  CancellationReason? @map("cancellation_reason")
   cancellationMessage String?             @map("cancellation_message")
-  rescheduledAt        DateTime?          @map("rescheduled_at")
+  rescheduledAt       DateTime?           @map("rescheduled_at")
 
   program Program @relation(fields: [programId], references: [id])
   group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  attendanceSessions AttendanceSession[]
+  attendanceRecords  AttendanceRecord[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -324,4 +335,293 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("newsletter_subscribers")
+}
+
+enum NotificationType {
+  CLASS_REMINDER
+  CLASS_CANCELLED
+  CLASS_RESCHEDULED
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Notification {
+  id                String              @id @default(cuid())
+  recipientUserId   String              @map("recipient_user_id")
+  type              NotificationType
+  title             String
+  message           String
+  relatedEntityType String              @map("related_entity_type")
+  relatedEntityId   String              @map("related_entity_id")
+  channel           NotificationChannel
+  status            NotificationStatus
+  dedupeKey         String              @map("dedupe_key")
+  attempts          Int                 @default(0)
+  scheduledFor      DateTime?           @map("scheduled_for")
+  sentAt            DateTime?           @map("sent_at")
+  readAt            DateTime?           @map("read_at")
+  failureReason     String?             @map("failure_reason")
+
+  recipient User @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([dedupeKey, channel])
+  @@index([recipientUserId, readAt])
+  @@index([status, type, channel])
+  @@index([relatedEntityType, relatedEntityId])
+  @@map("notifications")
+}
+
+enum AttendanceSessionStatus {
+  OPEN
+  CLOSED
+  EXPIRED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum AttendanceSource {
+  QR_WEB
+  ADMIN_OVERRIDE
+}
+
+model AttendanceSession {
+  id          String                  @id @default(cuid())
+  liveClassId String                  @map("live_class_id")
+  createdBy   String                  @map("created_by")
+  tokenHash   String                  @unique @map("token_hash")
+  status      AttendanceSessionStatus @default(OPEN)
+  startsAt    DateTime                @default(now()) @map("starts_at")
+  expiresAt   DateTime                @map("expires_at")
+  closedAt    DateTime?               @map("closed_at")
+
+  liveClass LiveClass          @relation(fields: [liveClassId], references: [id], onDelete: Restrict)
+  creator   User               @relation("AttendanceSessionsCreated", fields: [createdBy], references: [id], onDelete: Restrict)
+  records   AttendanceRecord[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([liveClassId, status])
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id            String           @id @default(cuid())
+  liveClassId   String           @map("live_class_id")
+  sessionId     String?          @map("session_id")
+  studentUserId String           @map("student_user_id")
+  status        AttendanceStatus
+  source        AttendanceSource
+  checkedInAt   DateTime?        @map("checked_in_at")
+  overriddenBy  String?          @map("overridden_by")
+  overrideNote  String?          @map("override_note")
+
+  liveClass LiveClass          @relation(fields: [liveClassId], references: [id], onDelete: Restrict)
+  session   AttendanceSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student   User               @relation("AttendanceRecordsAsStudent", fields: [studentUserId], references: [id], onDelete: Cascade)
+  overrider User?              @relation("AttendanceRecordsOverriddenBy", fields: [overriddenBy], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([liveClassId, studentUserId])
+  @@index([sessionId])
+  // Serves the student attendance-history query (where studentUserId = me);
+  // the composite unique above is live_class_id-first and can't.
+  @@index([studentUserId])
+  @@map("attendance_records")
+}
+
+// ─── Assessments / placement test (SPEC §9.2, §10.8, §11.9) ────────────────
+
+enum AssessmentType {
+  PLACEMENT
+  PRACTICE
+  MOCK_EXAM // reserved: model supports it, no dedicated flow yet
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  SINGLE_CHOICE // exactly one correct option — auto-graded
+  SHORT_TEXT // free text, human-graded
+  ESSAY // long free text, human-graded
+}
+
+enum QuestionSkill {
+  GRAMMAR
+  VOCABULARY
+  READING
+  LISTENING
+  WRITING
+  SPEAKING
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum AttemptStatus {
+  IN_PROGRESS // resumable
+  AWAITING_REVIEW // auto-scored; has ungraded free-text responses
+  GRADED // fully scored (auto + any manual)
+}
+
+model Assessment {
+  id             String           @id @default(cuid())
+  type           AssessmentType
+  title          String
+  description    String?
+  status         AssessmentStatus @default(DRAFT)
+  language       String           @default("fr") // ISO code of the question content
+  programId      String?          @map("program_id") // PRACTICE is program-scoped; PLACEMENT/MOCK are not
+  questionCount  Int?             @map("question_count") // questions drawn per attempt; null = all active
+  passPercentage Int?             @map("pass_percentage") // PRACTICE % display only
+
+  program   Program?            @relation(fields: [programId], references: [id])
+  questions Question[]
+  attempts  AssessmentAttempt[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([type, status])
+  @@map("assessments")
+}
+
+model Question {
+  id           String        @id @default(cuid())
+  assessmentId String        @map("assessment_id")
+  type         QuestionType
+  skill        QuestionSkill
+  cefrLevel    CefrLevel?    @map("cefr_level") // drives the placement ladder
+  order        Int
+  active       Boolean       @default(true)
+  prompt       String
+  explanation  String? // shown only on the post-submit review, never during an attempt
+  maxPoints    Int?          @map("max_points") // free-text grading cap
+
+  assessment Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  options    QuestionOption[]
+  responses  AssessmentResponse[]
+  attemptRefs AssessmentAttemptQuestion[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([assessmentId, active])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String  @id @default(cuid())
+  questionId String  @map("question_id")
+  order      Int
+  text       String
+  isCorrect  Boolean @default(false) @map("is_correct") // never serialized to a student mid-attempt
+
+  question  Question             @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responses AssessmentResponse[] @relation("ResponseSelectedOption")
+
+  @@map("question_options")
+}
+
+model AssessmentAttempt {
+  id           String        @id @default(cuid())
+  assessmentId String        @map("assessment_id")
+  // Set for a signed-in student's attempt. Null for an anonymous public
+  // placement attempt, which is owned via `claimTokenHash` (an httpOnly cookie
+  // holds the raw token) — no fake User/Enrollment row is ever created.
+  userId         String? @map("user_id")
+  claimTokenHash String? @unique @map("claim_token_hash")
+  status       AttemptStatus @default(IN_PROGRESS)
+  startedAt    DateTime      @default(now()) @map("started_at")
+  submittedAt  DateTime?     @map("submitted_at")
+  gradedAt     DateTime?     @map("graded_at")
+
+  // Derived result — stored separately from the source responses.
+  autoScorePoints   Int?       @map("auto_score_points")
+  autoMaxPoints     Int?       @map("auto_max_points")
+  manualScorePoints Int?       @map("manual_score_points")
+  manualMaxPoints   Int?       @map("manual_max_points")
+  estimatedCefr     CefrLevel? @map("estimated_cefr") // PLACEMENT only
+  recommendedTrack  String?    @map("recommended_track") // PLACEMENT only; a Program.track slug
+  resultSummary     String?    @map("result_summary")
+
+  assessment Assessment                  @relation(fields: [assessmentId], references: [id])
+  user       User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions  AssessmentAttemptQuestion[]
+  responses  AssessmentResponse[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([assessmentId, status])
+  @@map("assessment_attempts")
+}
+
+model AssessmentAttemptQuestion {
+  id         String @id @default(cuid())
+  attemptId  String @map("attempt_id")
+  questionId String @map("question_id")
+  order      Int
+
+  attempt  AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question          @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("assessment_attempt_questions")
+}
+
+model AssessmentResponse {
+  id               String  @id @default(cuid())
+  attemptId        String  @map("attempt_id")
+  questionId       String  @map("question_id")
+  selectedOptionId String? @map("selected_option_id") // SINGLE_CHOICE
+  textResponse     String? @map("text_response") // free text, length-capped in the action
+  isCorrect        Boolean? @map("is_correct") // auto-graded questions only
+  awardedPoints    Int?     @map("awarded_points")
+  graderFeedback   String?  @map("grader_feedback")
+  gradedById       String?  @map("graded_by_id")
+
+  answeredAt DateTime @default(now()) @map("answered_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  attempt        AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question          @relation(fields: [questionId], references: [id])
+  selectedOption QuestionOption?   @relation("ResponseSelectedOption", fields: [selectedOptionId], references: [id], onDelete: SetNull)
+  gradedBy       User?             @relation("AssessmentResponsesGraded", fields: [gradedById], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("assessment_responses")
 }

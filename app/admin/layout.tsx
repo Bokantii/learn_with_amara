@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import { Bell, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { getSessionUser } from "../../lib/authz";
+import { getUnreadNotificationCount, getRecentNotifications } from "../../lib/notifications/queries";
+import { NotificationBell } from "../../components/NotificationBell";
 import NavLinks from "./NavLinks";
 
 export default async function AdminLayout({
@@ -15,6 +17,10 @@ export default async function AdminLayout({
   }
 
   const admin = { name: user.name ?? "Admin" };
+  const [unreadCount, notifications] = await Promise.all([
+    getUnreadNotificationCount(user.id),
+    getRecentNotifications(user.id),
+  ]);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -59,13 +65,15 @@ export default async function AdminLayout({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Welcome back, {admin.name.split(" ")[0]}!</h2>
-              <p className="text-sm text-slate-500 mt-1">Here's what's happening across your programs</p>
+              <p className="text-sm text-slate-500 mt-1">Here&apos;s what&apos;s happening across your programs</p>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <Bell className="w-5 h-5 text-slate-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-fuchsia-500 rounded-full"></span>
-              </button>
+              <NotificationBell
+                unreadCount={unreadCount}
+                notifications={notifications}
+                linkHref="/admin/liveclasses"
+                dotClassName="bg-fuchsia-500"
+              />
             </div>
           </div>
         </header>

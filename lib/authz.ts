@@ -6,6 +6,11 @@ export async function getSessionUser() {
   return session?.user ?? null;
 }
 
+/** ADMIN or INSTRUCTOR — the roles allowed to run/manage live-class attendance. */
+export function isStaff(user: { role?: string | null } | null | undefined): boolean {
+  return user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR';
+}
+
 export async function hasActiveEnrollment(userId: string) {
   const count = await prisma.enrollment.count({
     where: { userId, status: 'ACTIVE' },

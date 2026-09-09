@@ -102,7 +102,15 @@ test('TCF/TEF exam prep CTAs resolve to real destinations, none silently inert',
   await expect(page).toHaveURL('/Pricing');
 
   await page.goto('/TCFTEFPrep');
-  const practiceExamButton = page.getByRole('button', { name: 'Take a Practice Exam' });
-  await expect(practiceExamButton).toBeDisabled();
-  await expect(page.getByText('Practice exams are launching in a future update')).toBeVisible();
+  // The placement test is a real, public feature (Phase 2 Task 7) — anyone can
+  // take it with no sign-in.
+  await page.getByRole('link', { name: 'Take the Placement Test' }).click();
+  await expect(page).toHaveURL('/assessments/placement');
+});
+
+test('the homepage has a public "test your French level" CTA', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Test Your French Level — Free' })).toBeVisible();
+  await page.getByRole('link', { name: 'Start the placement test' }).click();
+  await expect(page).toHaveURL('/assessments/placement');
 });
