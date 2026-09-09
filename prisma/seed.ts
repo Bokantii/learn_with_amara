@@ -139,6 +139,7 @@ async function main() {
     { key: 'a2', title: 'TEF Written Expression Mock', track: 'tef-canada-prep', dueDate: new Date('2026-04-08'), points: 30, type: 'Mock Test', priority: 'high' },
     { key: 'a3', title: 'DELF B1 Oral Prep Exercise', track: 'delf-dalf-track', dueDate: new Date('2026-04-10'), points: 15, type: 'Exercise', priority: 'low' },
     { key: 'a4', title: 'TCF Morning Cohort Speaking Drill', track: 'tcf-exam-prep', groupKey: 'g1', dueDate: new Date('2026-04-12'), points: 10, type: 'Exercise', priority: 'medium' },
+    { key: 'a5', title: 'TCF Reading Comprehension Check', track: 'tcf-exam-prep', dueDate: new Date('2026-03-20'), points: 20, type: 'Quiz', priority: 'medium' },
   ];
 
   const assignments = new Map<string, string>(); // key -> id
@@ -171,6 +172,18 @@ async function main() {
       status: 'GRADED' as const,
       score: 14,
       feedback: 'Good pronunciation, work on liaison.',
+    },
+    {
+      // Gives an enrolled, dashboard-rendering student (aisha, TCF) real graded
+      // work for the Results page and dashboard analytics. Uses a dedicated
+      // program-level assignment (not the group-scoped a4, which other specs
+      // expect to stay pending for her).
+      studentEmail: 'aisha.bello@example.com',
+      assignmentKey: 'a5',
+      submittedAt: new Date('2026-03-24'),
+      status: 'GRADED' as const,
+      score: 18,
+      feedback: 'Strong comprehension — review the inference questions in section 3.',
     },
   ];
 

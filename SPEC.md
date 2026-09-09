@@ -609,6 +609,21 @@ Charts render only when enough data exists. Provide meaningful empty state other
 `View Details` must open a real detail view.  
 `Download Report` must either generate a real report or be hidden until implemented; never provide a dead button.
 
+**Implemented — Phase 2 Task 8 (2026-09-08).** `/dashboard/results` is a server component backed by
+`lib/results/queries.ts#getStudentResults(userId)` (all queries scoped to the session user — no id
+from the client). It shows graded `Submission` rows (score / points / feedback), `GRADED` /
+`AWAITING_REVIEW` `AssessmentAttempt` results (each linking to the ownership-checked
+`/assessments/result/[attemptId]`), the latest placement CEFR **estimate** (labelled as an ICLP
+estimate, not an official score), and a truthful empty state when there is no graded work. Analytics
+in `lib/results/analytics.ts` (pure, unit-tested): assignment average from real grades only
+(`null` → empty state, never `0`); a score-trend chart gated at `TREND_MIN_POINTS = 3` graded
+assignments; a per-skill radar gated at `SKILL_MIN_AXES = 3` distinct skills, aggregated from
+auto-graded single-choice responses via `perSkillBreakdown`; objective (auto) vs manual scoring kept
+separate. `Download Report` is removed (no dead CTA) — a report/export is deferred (see Known
+Deferred Issues). The dashboard `/dashboard` **Assignment average** card, **Latest Assessment
+Result** card, and **Assignment score trend** chart use the same helper; the remaining §10.2
+dashboard metrics are still hardcoded and deferred.
+
 ### 10.9 Billing
 
 Current student billing screen contains fictional subscriptions/card information and must not ship as demo data.
@@ -1546,5 +1561,11 @@ Real gaps identified during implementation, explicitly deferred rather than sile
 12. **Anonymous placement attempts accumulate.** Phase 2 Task 7's public placement flow creates `AssessmentAttempt` rows with `userId = null` + `claimTokenHash` for anyone who takes the test without signing in — no fake `User`/`Enrollment` rows, but the attempt rows (and their `AssessmentAttemptQuestion` / `AssessmentResponse` children) are never pruned. One anonymous attempt is tracked per browser via the `placement_attempt` cookie; starting a new one orphans the old. A future maintenance job should delete anonymous attempts that are still `IN_PROGRESS` past a TTL (e.g. 7 days) and optionally age out old submitted anonymous results. Identified 2026-09-08 during the Task 7 public-access revision.
 
 13. **No "claim an anonymous placement result into my account" path.** If someone takes the placement test anonymously and later creates an account or signs in, their result is not associated with the new account and does not appear in `/assessments/history` — they would need to retake it while signed in. Deliberately deferred to keep the public flow minimal (no signup/claim step). A lightweight follow-up: a "Save this result to my account" action that verifies the `placement_attempt` cookie hash against `AssessmentAttempt.claimTokenHash` (and `userId IS NULL`) before setting `userId`. Identified 2026-09-08 during the Task 7 public-access revision.
+
+14. **Dashboard §10.2 metrics are still hardcoded (outside Results).** Phase 2 Task 8 wired the student dashboard's results/analytics cards (`Assignment average`, `Latest Assessment Result`, `Assignment score trend`) to real data via `lib/results/queries.ts`, but deliberately left the rest of `app/dashboard/page.tsx` untouched: **Overall Progress** (78%), **Study Hours** (42.5), **Completed Lessons** (24/32), **Continue Learning** (two fixed lessons), **Next Live Class** (fixed instructor/date/Zoom card), **Tasks Due** (`upcomingTasks` array), and **Announcements** (`announcements` array) are all still hardcoded. Overall Progress / Completed Lessons are derivable now (published-lesson completion, as in `/dashboard/myprograms`); Study Hours needs a defined activity source; Next Live Class / Tasks Due can reuse existing entitlement + assignment queries; Announcements has no backing model yet. Scope as a dedicated SPEC §10.2 dashboard-metrics task. Identified 2026-09-08 during Phase 2 Task 8.
+
+15. **No student-facing Results report/export.** Phase 2 Task 8 removed the dead `Download Report` button from `/dashboard/results` rather than shipping a fake one. A real export (server-generated PDF or a printable results view) is deferred to its own task. Identified 2026-09-08 during Phase 2 Task 8.
+
+16. **Assignment grade score has no upper bound.** `saveGradeAction` (`app/admin/grading/actions.ts`) validates `score: z.number().int().min(0)` with no `max` against `assignment.points`, so a grader typo (e.g. 25 on a 20-point assignment) is accepted and stored. Task 8's Results/analytics layer defensively clamps every displayed percentage to 0–100 (`pct()` in `lib/results/queries.ts`, and per-term in `assignmentAveragePercent`), but the underlying `Submission.score` can still exceed `Assignment.points`. Add a `max`-bound check in the grading schema (needs the assignment's `points` at validation time). Identified 2026-09-08 during the Phase 2 Task 8 code review.
 
 This history should support future administrative auditing and troubleshooting.

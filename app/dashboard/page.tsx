@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "../../auth";
 import { prisma } from "../../lib/prisma";
+import { getStudentResults } from "../../lib/results/queries";
+import { cefrLabel } from "../../lib/assessments/placement";
 import { Card } from "./../../components/ui/card";
 import { Progress } from "./../../components/ui/progress";
 import { Button } from "./../../components/ui/button";
@@ -10,21 +13,6 @@ import {
   CheckCircle2, AlertCircle, Trophy, Target, UsersRound,
 } from "lucide-react";
 import WeeklyProgressChart from "./WeeklyProgressChart";
-
-const progressData = [
-  { week: "W1", score: 65 },
-  { week: "W2", score: 72 },
-  { week: "W3", score: 78 },
-  { week: "W4", score: 85 },
-  { week: "W5", score: 88 },
-];
-
-const mockTestResults = [
-  { section: "Reading", score: 88, total: 100 },
-  { section: "Writing", score: 82, total: 100 },
-  { section: "Listening", score: 90, total: 100 },
-  { section: "Speaking", score: 85, total: 100 },
-];
 
 const upcomingTasks = [
   { id: 1, title: "French Grammar Exercise - Les Temps", due: "Today, 6:00 PM", priority: "high" },
@@ -54,15 +42,31 @@ export default async function Dashboard() {
     redirect("/SignIn");
   }
 
-  const memberships = await prisma.groupMembership.findMany({
-    where: { userId: session.user.id },
-    include: { group: { include: { program: true } } },
-  });
+  const [memberships, results] = await Promise.all([
+    prisma.groupMembership.findMany({
+      where: { userId: session.user.id },
+      include: { group: { include: { program: true } } },
+    }),
+    getStudentResults(session.user.id, { includeSkills: false }),
+  ]);
   const myGroups = memberships.map((m) => ({
     id: m.group.id,
     name: m.group.name,
     programName: m.group.program.name,
   }));
+
+  const latestAttempt = results.attempts[0] ?? null;
+  const latestAttemptScore =
+    latestAttempt && latestAttempt.status !== "AWAITING_REVIEW"
+      ? latestAttempt.assessment.type === "PLACEMENT"
+        ? cefrLabel(latestAttempt.estimatedCefr)
+        : (() => {
+            const max = (latestAttempt.autoMaxPoints ?? 0) + (latestAttempt.manualMaxPoints ?? 0);
+            const score =
+              (latestAttempt.autoScorePoints ?? 0) + (latestAttempt.manualScorePoints ?? 0);
+            return max > 0 ? `${Math.round((score / max) * 100)}%` : "—";
+          })()
+      : null;
 
   return (
     <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
@@ -120,11 +124,17 @@ export default async function Dashboard() {
         <Card className="p-4 md:p-6 bg-gradient-to-br from-amber-400 to-amber-500 text-white border-0">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-amber-100 text-xs md:text-sm">Average Score</p>
-              <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">86.3</p>
+              <p className="text-amber-100 text-xs md:text-sm">Assignment average</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">
+                {results.assignmentAverage === null ? "—" : `${results.assignmentAverage}%`}
+              </p>
               <div className="flex items-center gap-1 mt-1 md:mt-2">
                 <Trophy className="w-3 h-3 md:w-4 md:h-4" />
-                <span className="text-xs md:text-sm">Excellent!</span>
+                <span className="text-xs md:text-sm">
+                  {results.assignmentGrades.length > 0
+                    ? `${results.assignmentGrades.length} graded`
+                    : "No grades yet"}
+                </span>
               </div>
             </div>
             <div className="w-9 h-9 md:w-12 md:h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -221,10 +231,20 @@ export default async function Dashboard() {
             </div>
           </Card>
 
-          {/* Progress Chart */}
+          {/* Assignment score trend */}
           <Card className="p-4 md:p-6">
-            <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">Weekly Progress</h3>
-            <WeeklyProgressChart data={progressData} />
+            <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">
+              Assignment score trend
+            </h3>
+            {results.trend ? (
+              <WeeklyProgressChart
+                data={results.trend.map((p) => ({ week: p.label, score: p.percent }))}
+              />
+            ) : (
+              <p className="text-sm text-slate-500 py-8 text-center">
+                Not enough graded work yet to show a trend.
+              </p>
+            )}
           </Card>
         </div>
 
@@ -295,28 +315,50 @@ export default async function Dashboard() {
             </div>
           </Card>
 
-          {/* Mock Test Results */}
+          {/* Latest Assessment Result */}
           <Card className="p-4 md:p-6">
-            <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">Latest Mock Test</h3>
-            <div className="space-y-3 md:space-y-4">
-              {mockTestResults.map((result) => (
-                <div key={result.section}>
-                  <div className="flex items-center justify-between text-sm mb-1.5">
-                    <span className="text-slate-700 font-medium text-xs md:text-sm">{result.section}</span>
-                    <span className="font-bold text-sky-600 text-xs md:text-sm">
-                      {result.score}/{result.total}
+            <h3 className="font-bold text-base md:text-lg text-slate-900 mb-4">
+              Latest Assessment Result
+            </h3>
+            {latestAttempt ? (
+              <div>
+                <p className="text-sm font-medium text-slate-900">
+                  {latestAttempt.assessment.title}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {latestAttempt.assessment.type === "PLACEMENT" ? "Placement" : "Practice"}
+                  {latestAttempt.submittedAt
+                    ? ` · ${latestAttempt.submittedAt.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}`
+                    : ""}
+                </p>
+                <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
+                  <span className="font-bold text-slate-900 text-sm md:text-base">
+                    {latestAttempt.assessment.type === "PLACEMENT" ? "Estimated level" : "Score"}
+                  </span>
+                  {latestAttemptScore ? (
+                    <span className="text-xl md:text-2xl font-bold text-sky-600">
+                      {latestAttemptScore}
                     </span>
-                  </div>
-                  <Progress value={result.score} className="h-1.5 md:h-2 bg-slate-200" />
+                  ) : (
+                    <Badge className="bg-amber-100 text-amber-800 text-xs">Awaiting review</Badge>
+                  )}
                 </div>
-              ))}
-              <div className="mt-3 pt-3 border-t border-slate-200">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-sm md:text-base">Overall Score</span>
-                  <span className="text-xl md:text-2xl font-bold text-sky-600">86.3%</span>
-                </div>
+                <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+                  <Link href={`/assessments/result/${latestAttempt.id}`}>View details</Link>
+                </Button>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500">No assessment results yet.</p>
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link href="/assessments">Take a practice test</Link>
+                </Button>
+              </div>
+            )}
           </Card>
 
           {/* Announcements */}
