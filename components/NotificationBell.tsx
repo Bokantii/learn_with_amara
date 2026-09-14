@@ -12,6 +12,8 @@ interface NotificationItem {
   message: string;
   createdAt: Date;
   readAt: Date | null;
+  /** Per-type destination; falls back to `linkHref` when null. */
+  href?: string | null;
 }
 
 interface NotificationBellProps {
@@ -50,7 +52,7 @@ export function NotificationBell({
         router.refresh();
       });
     }
-    router.push(linkHref);
+    router.push(notification.href ?? linkHref);
   };
 
   return (

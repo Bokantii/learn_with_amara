@@ -28,3 +28,17 @@ export async function getAppOrigin(): Promise<string> {
   const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
   return `${proto}://${host}`;
 }
+
+/**
+ * Like `getAppOrigin` but returns `''` instead of throwing when the origin can't
+ * be resolved (production without `NEXT_PUBLIC_APP_URL`). Callers that build a
+ * link but must not fail the surrounding write — e.g. account-invite / reset —
+ * use this and fall back to a relative path.
+ */
+export async function getAppOriginOrEmpty(): Promise<string> {
+  try {
+    return await getAppOrigin();
+  } catch {
+    return '';
+  }
+}

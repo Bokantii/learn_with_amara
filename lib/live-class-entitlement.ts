@@ -1,34 +1,20 @@
 import { prisma } from './prisma';
 import type { EnrollmentStatus } from './generated/prisma/client';
+import {
+  VISIBLE_ENROLLMENT_STATUSES,
+  NOTIFY_ENROLLMENT_STATUSES,
+} from './enrollment/status';
 
 /**
- * Single source of truth for live-class entitlement (SPEC §10.6).
+ * Live-class entitlement (SPEC §10.6). A student is entitled to a live class
+ * when they have an enrollment in the class's program with a qualifying status
+ * AND — for a group-scoped class — are a current member of that group. A stale
+ * `GroupMembership` alone is never sufficient.
  *
- * A student is entitled to a live class when they have an enrollment in the
- * class's program with a qualifying status AND — for a group-scoped class —
- * are a current member of that group. A stale `GroupMembership` alone is never
- * sufficient.
- *
- * Two status sets, deliberately different:
- *
- *  - VISIBLE  — what the student can SEE on the dashboard (pull). Everything
- *    except a cancelled enrollment.
- *  - NOTIFY   — who receives PUSHED communication (email + in-app bell).
- *    Narrower on purpose: a not-yet-confirmed (PENDING) or paused student
- *    should not get class reminders / Zoom links pushed to their inbox.
- *
- * `app/dashboard/liveclasses/page.tsx` resolves the inverse direction
- * (given a user, which classes) and consumes VISIBLE_ENROLLMENT_STATUSES so the
- * two never drift.
+ * The enrollment-status sets live in `lib/enrollment/status.ts` (the single
+ * source of truth); re-exported here for the existing call sites.
  */
-export const VISIBLE_ENROLLMENT_STATUSES: EnrollmentStatus[] = [
-  'PENDING',
-  'ACTIVE',
-  'PAUSED',
-  'COMPLETED',
-];
-
-export const NOTIFY_ENROLLMENT_STATUSES: EnrollmentStatus[] = ['ACTIVE', 'COMPLETED'];
+export { VISIBLE_ENROLLMENT_STATUSES, NOTIFY_ENROLLMENT_STATUSES };
 
 /**
  * Resolve the user ids currently entitled to `liveClass` under `statuses`.
@@ -41,7 +27,13 @@ export async function entitledUserIdsForLiveClass(
   statuses: EnrollmentStatus[]
 ): Promise<string[]> {
   const enrollments = await prisma.enrollment.findMany({
-    where: { programId: liveClass.programId, status: { in: statuses } },
+    // Enrollments model student membership — a stray enrollment on a staff
+    // account must never make it a push/attendance recipient.
+    where: {
+      programId: liveClass.programId,
+      status: { in: statuses },
+      user: { role: 'STUDENT' },
+    },
     select: { userId: true },
   });
   let ids = new Set(enrollments.map((e) => e.userId));

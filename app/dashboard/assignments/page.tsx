@@ -1,21 +1,25 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../../auth";
+import { getSessionUser } from "../../../lib/authz";
 import { prisma } from "../../../lib/prisma";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
 import AssignmentsClient from "./AssignmentsClient";
 
 export default async function AssignmentsPage() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     redirect("/SignIn");
   }
 
   const [enrollments, memberships] = await Promise.all([
     prisma.enrollment.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: user.id,
+        status: { in: CONTENT_ACCESS_ENROLLMENT_STATUSES },
+      },
       select: { programId: true },
     }),
     prisma.groupMembership.findMany({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
       select: { groupId: true },
     }),
   ]);
@@ -32,7 +36,7 @@ export default async function AssignmentsPage() {
       orderBy: { dueDate: "asc" },
     }),
     prisma.submission.findMany({
-      where: { studentId: session.user.id },
+      where: { studentId: user.id },
     }),
   ]);
 

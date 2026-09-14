@@ -119,6 +119,21 @@ Can manage:
 - Client-side role checks are UX only. Server-side authorization is authoritative.
 - A user must not gain staff access by editing cookies, query strings, local storage, request bodies or client state.
 
+**Implemented (2026-09-10, Phase 2 Task 11) — account lifecycle.** `User.status` is
+`INVITED | ACTIVE | DEACTIVATED`. An admin provisions a student (`/admin/students`) or staff member
+(`/admin/staff`, ADMIN-only; role = ADMIN or INSTRUCTOR) as `INVITED` with **no password**; a
+single-use, hashed-at-rest `AccountToken` (`lib/account/token.ts`, 7-day TTL) is emailed — or, when
+email is unconfigured, the one-time link is shown once to the admin. Setting a password via
+`/invite/[token]` flips the account to `ACTIVE`. Deactivation (`lib/account/lifecycle.ts`) flips
+`status` + audit fields only — it never deletes an enrollment, submission, grade, payment,
+attendance or notification row — kills the user's `Session` rows, and is reversible
+(`Reactivate`). Guards: an admin cannot deactivate their own account or the last `ACTIVE` admin;
+each mutation is `adminActionClient`. `auth.ts#authorize` refuses a non-ACTIVE credentials login and
+the `signIn` callback refuses a non-ACTIVE OAuth login; `lib/authz.ts#getSessionUser` re-reads
+`status`/`role` per request (memoised with React `cache`) so a mid-session deactivation or role
+change takes effect on the next request. Password reset: `/reset-password` (request, no account
+enumeration — always the same confirmation) → `/reset-password/[token]` (1-hour TTL).
+
 ---
 
 ## 5. Authentication and post-login routing
@@ -160,6 +175,12 @@ Requirements:
 - preserve cursor/focus where practical
 - `aria-label="Show password"` / `aria-label="Hide password"`
 - works on sign in, sign up, reset/change password and confirmation fields
+
+The `/reset-password/[token]` and `/invite/[token]` set-password forms
+(`components/SetPasswordForm.tsx`) and the Settings → Security "Change Password" card
+(`app/dashboard/settings/ChangePasswordCard.tsx`) carry the show/hide toggle on every field
+(Phase 2 Task 11). Settings' Profile / Notifications / Language / 2FA tabs remain static
+placeholders — deferred to their own de-fake task.
 
 ### 5.5 Authentication performance
 
@@ -204,6 +225,17 @@ Recommended statuses (adapt to existing conventions):
 - `CANCELLED`
 
 Do not silently delete historical enrollment data when a student leaves a program.
+
+**Decision (2026-09-09, Phase 2 Task 9) — admin-approved activation (model B).** A new enrollment is
+created `PENDING` and an admin moves it to `ACTIVE` explicitly. Recording a payment (Stripe or
+manual) links it to the enrollment but **never** auto-activates. The legal transition matrix lives
+in `lib/enrollment/status.ts#ENROLLMENT_TRANSITIONS` and is enforced by
+`assertTransition` in `updateEnrollmentStatusAction` (and mirrored in the admin Select):
+`PENDING→{ACTIVE,CANCELLED}`, `ACTIVE→{PAUSED,COMPLETED,CANCELLED}`,
+`PAUSED→{ACTIVE,COMPLETED,CANCELLED}`, `COMPLETED→{ACTIVE}`, `CANCELLED→{PENDING,ACTIVE}`. Course
+content access (`hasProgramAccess`, lesson / recorded-lesson / assignment / practice-test reads) is
+`ACTIVE` or `COMPLETED` only (`CONTENT_ACCESS_ENROLLMENT_STATUSES`) — a PENDING or PAUSED enrollment
+is visible but not usable, and payment status is never treated as proof of access.
 
 ---
 
@@ -639,6 +671,15 @@ MVP principles:
 
 Do not impose a recurring-subscription model merely because the current UI contains monthly cards.
 
+**Implemented — Phase 2 Task 9 (2026-09-09).** `/dashboard/billing` is a server component backed by
+`lib/billing/queries.ts#getStudentBilling(userId)` (session-scoped; no per-payment id route). It
+shows a real payment-history table (date · program · amount + currency via `formatMoney` · method /
+source badge — Card = Stripe-confirmed, Manual = admin-recorded · status · reference) and a
+read-only enrollments summary, with a truthful empty state and none of the old fake subscriptions /
+card-on-file / invoices / due dates. A PENDING or PAUSED student can still reach billing (the
+dashboard shell gate is now `hasVisibleEnrollment`). No recurring / card-on-file model. Card-on-file
+and a self-serve recurring plan are explicitly out of scope (see Known Deferred Issues).
+
 ### 10.10 Settings
 
 Replace hardcoded profile data.
@@ -678,6 +719,13 @@ Requirements:
 - open a student detail view
 - avoid one-program-per-student assumption
 - safe deactivate/archive flow rather than destructive deletion when records have history
+
+**Status (Phase 2 Task 11):** the destructive hard-delete is gone — `removeStudentAction` was
+replaced with `setStudentDeactivatedAction` (Deactivate / Reactivate, `AlertDialog` confirm), a
+per-row `Invited / Active / Deactivated` chip, a "Resend invite" / "Copy invite link" action for
+INVITED rows, and a "Show deactivated" toggle (archived rows hidden by default). A dedicated
+`/admin/students/[id]` detail route with the full breakdown below is still deferred
+(Known Deferred Issue #19, now narrowed to "detail route only").
 
 Student detail should expose, as appropriate:
 - overview
@@ -869,6 +917,21 @@ Admin/instructor can publish announcements targeted to:
 
 Announcements appear on student dashboard and may produce notifications.
 
+**Implemented — Phase 2 Task 10 (2026-09-09).** `Announcement` model + `/admin/announcements`
+(admin-only): create a draft, **publish** (→ delivers), **edit** title/body (no re-send),
+**archive / unarchive** (hidden from students, kept for the record + its delivered notifications),
+**delete** (drafts only — a published announcement is archived, never deleted). Scopes: `ALL` /
+`PROGRAM` / `GROUP` / `STUDENT`; the `(scope, target)` pairing is validated server-side.
+`lib/announcements/targeting.ts#resolveAnnouncementRecipientIds` resolves recipients from current
+data: `PROGRAM` / `GROUP` use `NOTIFY_ENROLLMENT_STATUSES` (ACTIVE + COMPLETED — same as live-class
+push); `GROUP` also requires current membership; `ALL` = student accounts with ≥1 NOTIFY enrollment;
+`STUDENT` = the one named student. On publish, `sendAnnouncementNotification` fans out through the
+central `dispatchNotification` (`type = ANNOUNCEMENT`, IN_APP + EMAIL, synchronous, deduped by
+`ANNOUNCEMENT:<id>:<userId>`). Students see their feed at `/dashboard/announcements` (targeting
+recomputed server-side, no per-announcement route) and the 3 most recent on the dashboard card
+(replacing the hardcoded array). Instructor authoring stays deferred (no instructor↔program
+relation — see Known Deferred Issue #9).
+
 ### 11.12 Payments
 
 Current admin payment page must reflect real records, not demo status.
@@ -888,6 +951,16 @@ Admin dashboard metrics such as monthly revenue and paying students must derive 
 
 If payment collection is not yet integrated, support manual payment records only if this matches institutional workflow; clearly distinguish manual records from processor-confirmed transactions.
 
+**Implemented — Phase 2 Task 9 (2026-09-09).** `/admin/payments` uses
+`getPaymentsOverview()` (real this-month revenue, paying vs non-paying, 6-month series) and lists
+every `Payment` with a Card/Manual source badge. Admins **record** a manual payment
+(`recordPaymentAction`, `source = MANUAL`, linked to the student + optionally an enrollment,
+`recordedById` audit) and **mark refunded** (`updatePaymentStatusAction`) — never delete. Stripe
+payments arrive via the webhook as `source = STRIPE`. `Payment` gained `programId` / `enrollmentId`
+/ `source` / `method` / `reference` / `recordedById` / `note` / timestamps; `dueDate` is nullable and
+no longer fabricated. Known limitation: the revenue card/chart sum `amountCents` across currencies
+(pre-existing) — a per-currency breakdown is deferred.
+
 ---
 
 ## 12. Communication and notifications
@@ -899,15 +972,16 @@ This milestone does **not** need a full chat/messaging product.
 Examples:
 
 Admin -> Student:
-- enrollment activated/changed
-- assignment published
-- assignment graded
-- class scheduled/updated/cancelled
-- lesson published
-- announcement published
-- payment status changed when appropriate
+- enrollment activated/changed — ✅ Task 10 (`sendEnrollmentChangedNotification`)
+- assignment published — ✅ Task 10 (`sendAssignmentPublishedNotification`, program∩group NOTIFY students)
+- assignment graded — ✅ Task 10 (`saveGradeAction` migrated off raw Resend to `sendAssignmentGradedNotification`; in-app + email, deduped by submission + score)
+- class scheduled/updated/cancelled — ✅ Task 5 (live-class reminder / reschedule / cancellation)
+- lesson published — ✅ Task 10 (`sendLessonPublishedNotification`, first publish only, program NOTIFY students)
+- assessment result finalized — ✅ Task 10 (`finalizeAttemptAction` → `sendAssessmentGradedNotification`, skips anonymous attempts)
+- announcement published — ✅ Task 10 (see §11.11)
+- payment status changed — deferred (no clear student-visible trigger in the manual/Stripe flow yet)
 
-Student -> Admin:
+Student -> Admin: deferred — see Known Deferred Issue #7 (the admin bell is a truthful empty state).
 - assignment submitted
 - assessment completed
 - lesson/progress data updated
@@ -1528,11 +1602,11 @@ Where useful, records should contain:
 
 Real gaps identified during implementation, explicitly deferred rather than silently dropped. Each should be scoped as its own task before being considered resolved.
 
-1. **Admin-created students have no credentials.** `addStudentAction` (admin Students page) creates a `User` row without setting `passwordHash`, so a student added directly by an admin currently has no way to sign in via Credentials — only Google/Facebook OAuth would work, and only if the email happens to match. Needs either a generated temporary password shown to the admin, or a proper invitation/set-password-via-email flow before this path is usable in production. Identified 2026-08-26 while building Phase 2 Task 1 (Programs/Enrollments); not fixed as part of that task.
+1. ~~**Admin-created students have no credentials.**~~ **Resolved 2026-09-10 (Phase 2 Task 11).** `addStudentAction` now calls `createInvitedUser` (`lib/account/lifecycle.ts`): the account is `status: INVITED` with no password, and a single-use hashed `AccountToken` (7-day TTL) is emailed as an `/invite/[token]` link (shown once to the admin when email is unconfigured). Setting a password there activates the account. `auth.ts#authorize` rejects a non-ACTIVE login. Staff use the same flow via `/admin/staff`.
 
-2. **Removing a student is a destructive hard delete.** `removeStudentAction` calls `prisma.user.delete()`, which cascades (`onDelete: Cascade`) to permanently erase the student's enrollments, submissions, and payment history. This conflicts with the "preserve historical academic/financial data" principle (§2.5, §11.2) — removal should be a safe deactivate/archive flow instead. Pre-existing before Phase 1; still unresolved.
+2. ~~**Removing a student is a destructive hard delete.**~~ **Resolved 2026-09-10 (Phase 2 Task 11).** `removeStudentAction` (and the `prisma.user.delete()` call) is gone. `setStudentDeactivatedAction` → `deactivateUser` / `reactivateUser` flips `User.status` to `DEACTIVATED` / `ACTIVE` and writes `deactivatedAt` / `deactivatedById` — no enrollment, submission, grade, payment, attendance or notification row is ever deleted. A deactivated account cannot sign in (checked at `authorize` and re-checked per request in `getSessionUser`) and is reversible. The `/admin/students/[id]` detail route is still deferred — see #19.
 
-3. **Students with only COMPLETED enrollments see the onboarding empty state.** `hasActiveEnrollment()` (`lib/authz.ts`, added in Phase 1) checks `status: 'ACTIVE'` only. A student who has finished every program they were ever enrolled in (all enrollments `COMPLETED`, none `ACTIVE`) is routed to the "you're not enrolled yet" onboarding screen instead of a view of their program history. Needs a product decision on what "no active enrollment" should mean for a student with only completed/cancelled history, then a corresponding fix to the dashboard-layout gating logic. Identified 2026-08-26 during the Phase 2 Task 1 `EnrollmentStatus` extension; not fixed as part of that task.
+3. ~~**Students with only COMPLETED enrollments see the onboarding empty state.**~~ **Resolved 2026-09-09 (Phase 2 Task 9).** The dashboard-shell gate (`app/dashboard/layout.tsx`) now uses `hasVisibleEnrollment()` (`lib/authz.ts` — any enrollment in `VISIBLE_ENROLLMENT_STATUSES`, i.e. anything but `CANCELLED`), so a PENDING / PAUSED / COMPLETED-only student gets the dashboard (billing, my programs, results) rather than the "not enrolled" screen. Course *content* is gated separately by `hasProgramAccess` (`ACTIVE` / `COMPLETED`). A student with zero enrollments or only `CANCELLED` ones still sees the onboarding state.
 
 4. **Notification preferences in Settings are non-functional.** `app/dashboard/settings/page.tsx` renders a static list of notification toggles (`Email Notifications`, `Live Class Reminders`, …) with hardcoded `defaultOn` values; nothing is persisted and the notification service (`lib/notifications/`) sends to every recipient in the NOTIFY set regardless. Wiring a real per-user, per-type/channel opt-out (a preferences model honoured in `resolveLiveClassRecipients` / `dispatchNotification`) is its own task. Identified 2026-08-29 during Phase 2 Task 5 (Notifications).
 
@@ -1540,32 +1614,48 @@ Real gaps identified during implementation, explicitly deferred rather than sile
 
 5. **Live class times are rendered in UTC only.** Reminder/cancellation/reschedule emails and the in-app notification bell format class times with `timeZone: 'UTC'` because `LiveClass` has no timezone field (a Phase 2 Task 3 limitation). A Lagos or Toronto student sees e.g. "3:00 PM UTC". Needs a `timezone` (or per-student display-tz) on `LiveClass` plus locale-aware formatting. Identified 2026-08-29 during Phase 2 Task 5.
 
-6. **Class-communication sends run synchronously inside the admin action.** `cancelLiveClassAction` / `updateLiveClassAction` await the full recipient fan-out (in-app write + Resend call per student) before returning. Safe and fast for current cohort sizes, but a large program risks the server-action time budget and a partially-sent batch with no in-request resumption (the reminder scheduler's bounded retry does not cover cancel/reschedule). Move to `after()` or a job queue when cohort sizes grow. Identified 2026-08-29 during Phase 2 Task 5.
+6. **Communication sends run synchronously inside the admin action.** `cancelLiveClassAction` / `updateLiveClassAction` (Task 5) and now `publishAnnouncementAction` + the Task 10 event hooks (`saveGradeAction`, `createAssignmentAction`, `setLessonPublishedAction`, `updateEnrollmentStatusAction`, `finalizeAttemptAction`) `await` the recipient fan-out (in-app write + Resend call per student, bounded concurrency 6, wrapped in `notifySafely`) before returning. Safe and fast for the current roster, but an `ALL`-students announcement to a large cohort risks the server-action time budget and a partially-sent batch with no in-request resumption (the reminder scheduler's bounded retry only re-drives rows that reached `FAILED`/stale-`PENDING`). Move to `after()` or a job queue when cohorts grow. Identified 2026-08-29 during Phase 2 Task 5; extended 2026-09-09 during Phase 2 Task 10.
 
 7. **No admin-directed (Student → Admin) notifications yet.** The notification bell is wired into the admin layout but only students receive notifications in this milestone, so the admin bell is a permanent truthful-empty state. SPEC §12 "Student -> Admin" events (submission received, assessment completed, attendance recorded) are a later task. The in-app bell is also not real-time — it refreshes on navigation, not via polling/SSE. Identified 2026-08-29 during Phase 2 Task 5.
 
 8. **Task 5 review follow-ups (non-blocking).** From the `security-reviewer` / `code-reviewer` pass on Phase 2 Task 5, deferred rather than dropped:
    - Cron endpoint (`app/api/cron/live-class-reminders/route.ts`): switch `GET` → `POST`; add a rate-limit / in-flight lock; hash both sides of the bearer compare so the early length check doesn't leak the secret length.
-   - Project-wide `handleServerError` on the `next-safe-action` client so guard/validation `throw new Error(...)` messages reach the user instead of the generic "Something went wrong" (pre-existing repo pattern, e.g. `parseAndValidateTimes`).
+   - ~~Project-wide `handleServerError` on the `next-safe-action` client~~ **Done 2026-09-10 (Task 11):** `lib/safe-action.ts` now forwards an `ActionError` (`lib/action-error.ts`) message to `result.serverError` and logs + genericises anything else. Task 11's own guard failures throw `ActionError`; older actions still `throw new Error(...)` (still masked) — migrate opportunistically.
    - Sentry `beforeSend` scrub for recipient email addresses that Resend echoes into provider error strings (the DB `failureReason` is already reduced to a fixed set; Sentry still gets the raw error).
    - `markLiveClassCompletedAction` has no `status === 'SCHEDULED'` guard (unlike the now-guarded update/cancel actions).
    - Moving a class to a different program/group sends no communication to the old or new cohort.
    - `app/dashboard/liveclasses/page.tsx` and `lib/live-class-entitlement.ts` now share the entitlement status constants and the resolve-by-class helper, but the page still runs its own list-by-user query; a full merge into one helper is a later cleanup.
 
-9. **INSTRUCTOR attendance access is platform-wide.** Phase 2 Task 6 introduced `staffActionClient` (ADMIN | INSTRUCTOR) for the QR-attendance management surface (`/attendance/manage`, the four session/override actions). `LiveClass` has only a free-text `instructorName` column — no `instructor` → `User` relation — so "this instructor owns this class" cannot be enforced. Any INSTRUCTOR account can therefore start/close attendance sessions, read the roster (student name + email), and set status overrides for **every** class in every program. Accepted for this milestone as the deliberate trust level (SPEC §4.3 / §11.6 — instructors "manage attendance"); provision INSTRUCTOR accounts with the same care as ADMIN. Proper scoping needs an instructor↔class (or ↔program/group) relation plus per-class checks in every `staffActionClient` action and both manage pages, and is its own task. Identified 2026-09-01 by the Task 6 `security-reviewer` pass (finding H1).
+9. **INSTRUCTOR attendance access is platform-wide.** Phase 2 Task 6 introduced `staffActionClient` (ADMIN | INSTRUCTOR) for the QR-attendance management surface (`/attendance/manage`, the four session/override actions). `LiveClass` has only a free-text `instructorName` column — no `instructor` → `User` relation — so "this instructor owns this class" cannot be enforced. Any INSTRUCTOR account can therefore start/close attendance sessions, read the roster (student name + email), and set status overrides for **every** class in every program. Accepted for this milestone as the deliberate trust level (SPEC §4.3 / §11.6 — instructors "manage attendance"); provision INSTRUCTOR accounts with the same care as ADMIN. Proper scoping needs an instructor↔class (or ↔program/group) relation plus per-class checks in every `staffActionClient` action and both manage pages, and is its own task. Identified 2026-09-01 by the Task 6 `security-reviewer` pass (finding H1). **Narrowed 2026-09-10 (Task 11):** an INSTRUCTOR can now be provisioned and deactivated from `/admin/staff`, and a deactivation revokes attendance access on the next request (`getSessionUser` gate) — but the *scoping* gap above (any active instructor manages every class) is unchanged.
 
 10. **QR attendance token is class-wide for its 15-minute window.** One `AttendanceSession` token covers the whole class; check-in validates token + auth + entitlement + `SCHEDULED` + no existing record, with nothing binding the check-in to physical presence. An entitled student who obtains the link out of band (screenshot, classmate, photo of the projector) can check in remotely within the window, recorded indistinguishably from a real scan. Mitigations (rotating sub-tokens refreshed on the manage screen, shorter window, not rendering the raw URL as text) are deferred. Identified 2026-09-01 by the Task 6 `security-reviewer` pass (finding M1).
 
-11. **Staff role is read from the JWT, not the database.** `getSessionUser()` / `staffActionClient` / `adminActionClient` trust the `role` claim written into the session token at sign-in (`auth.ts`). Demoting or offboarding a staff member (INSTRUCTOR or ADMIN) in the database does not revoke their access until the token expires. Pre-existing for ADMIN; Task 6 widened it by adding the first INSTRUCTOR-authorized mutation path. Fix (DB role re-fetch for staff paths, or a role-version claim, or shorter session lifetime) belongs with a session-security pass. Also in scope for that pass: `lib/rate-limit.ts` fails **open** when Upstash env is unset, so auth-adjacent limiters (login, sign-up, attendance check-in) have no brute-force ceiling in an unconfigured environment — consider failing closed / asserting the env at boot in production (Task 7's anonymous `startAssessmentAction` already fails closed in production when unconfigured). And `getClientIp` (`lib/rate-limit.ts`) takes the leftmost `x-forwarded-for` value, which a client controls on any non-Vercel proxy topology — an attacker rotates the header to mint unlimited rate-limit buckets; prefer a platform-trusted header / trusted-proxy parse. Identified 2026-09-01 (M3, L5) and extended 2026-09-08 by the Task 7 revision `security-reviewer` pass (L1, L2).
+11. **Rate-limit fail-open and client-controlled IP (session-security pass).** ~~Staff role is read from the JWT, not the database~~ — **resolved 2026-09-10 (Task 11):** `lib/authz.ts#getSessionUser` re-reads `role` and `status` from the database on every request (memoised per render with React `cache`), so a demotion, promotion or deactivation takes effect on the next request rather than at token expiry; `deactivateUser` also deletes the account's `Session` rows. Still open for that pass: `lib/rate-limit.ts` fails **open** when Upstash env is unset, so auth-adjacent limiters (login, sign-up, attendance check-in) have no brute-force ceiling in an unconfigured environment — consider failing closed / asserting the env at boot in production (Task 7's anonymous `startAssessmentAction` already fails closed in production when unconfigured). And `getClientIp` (`lib/rate-limit.ts`) takes the leftmost `x-forwarded-for` value, which a client controls on any non-Vercel proxy topology — an attacker rotates the header to mint unlimited rate-limit buckets; prefer a platform-trusted header / trusted-proxy parse. Identified 2026-09-01 (M3, L5) and extended 2026-09-08 by the Task 7 revision `security-reviewer` pass (L1, L2).
 
 12. **Anonymous placement attempts accumulate.** Phase 2 Task 7's public placement flow creates `AssessmentAttempt` rows with `userId = null` + `claimTokenHash` for anyone who takes the test without signing in — no fake `User`/`Enrollment` rows, but the attempt rows (and their `AssessmentAttemptQuestion` / `AssessmentResponse` children) are never pruned. One anonymous attempt is tracked per browser via the `placement_attempt` cookie; starting a new one orphans the old. A future maintenance job should delete anonymous attempts that are still `IN_PROGRESS` past a TTL (e.g. 7 days) and optionally age out old submitted anonymous results. Identified 2026-09-08 during the Task 7 public-access revision.
 
 13. **No "claim an anonymous placement result into my account" path.** If someone takes the placement test anonymously and later creates an account or signs in, their result is not associated with the new account and does not appear in `/assessments/history` — they would need to retake it while signed in. Deliberately deferred to keep the public flow minimal (no signup/claim step). A lightweight follow-up: a "Save this result to my account" action that verifies the `placement_attempt` cookie hash against `AssessmentAttempt.claimTokenHash` (and `userId IS NULL`) before setting `userId`. Identified 2026-09-08 during the Task 7 public-access revision.
 
-14. **Dashboard §10.2 metrics are still hardcoded (outside Results).** Phase 2 Task 8 wired the student dashboard's results/analytics cards (`Assignment average`, `Latest Assessment Result`, `Assignment score trend`) to real data via `lib/results/queries.ts`, but deliberately left the rest of `app/dashboard/page.tsx` untouched: **Overall Progress** (78%), **Study Hours** (42.5), **Completed Lessons** (24/32), **Continue Learning** (two fixed lessons), **Next Live Class** (fixed instructor/date/Zoom card), **Tasks Due** (`upcomingTasks` array), and **Announcements** (`announcements` array) are all still hardcoded. Overall Progress / Completed Lessons are derivable now (published-lesson completion, as in `/dashboard/myprograms`); Study Hours needs a defined activity source; Next Live Class / Tasks Due can reuse existing entitlement + assignment queries; Announcements has no backing model yet. Scope as a dedicated SPEC §10.2 dashboard-metrics task. Identified 2026-09-08 during Phase 2 Task 8.
+14. ~~**Dashboard §10.2 metrics are still partly hardcoded.**~~ **Resolved 2026-09-13 (V1 Launch Gate item 1).** `app/dashboard/page.tsx` now computes **Overall Progress** and **Completed Lessons** from real `Lesson`/`LessonProgress` counts scoped to the student's content-access enrollments (the same calculation `/dashboard/myprograms` already used per-program, aggregated here); **Next Live Class** queries the student's actual soonest upcoming `SCHEDULED` class (same entitlement rule as `/dashboard/liveclasses`); **Tasks Due** queries real pending assignments (same query `/dashboard/assignments` uses, with the assignment's real `priority` column). **Study Hours** had no real data source (no activity/time-tracking model exists) so it was replaced with **Active Programs** (a real enrollment count) rather than fabricated further. **Continue Learning** was removed outright — no "resume where you left off" data exists to derive it from, and building that is a new feature, not a launch-gate tweak. Originally identified 2026-09-08 during Phase 2 Task 8; narrowed 2026-09-09 during Phase 2 Task 10.
 
 15. **No student-facing Results report/export.** Phase 2 Task 8 removed the dead `Download Report` button from `/dashboard/results` rather than shipping a fake one. A real export (server-generated PDF or a printable results view) is deferred to its own task. Identified 2026-09-08 during Phase 2 Task 8.
 
-16. **Assignment grade score has no upper bound.** `saveGradeAction` (`app/admin/grading/actions.ts`) validates `score: z.number().int().min(0)` with no `max` against `assignment.points`, so a grader typo (e.g. 25 on a 20-point assignment) is accepted and stored. Task 8's Results/analytics layer defensively clamps every displayed percentage to 0–100 (`pct()` in `lib/results/queries.ts`, and per-term in `assignmentAveragePercent`), but the underlying `Submission.score` can still exceed `Assignment.points`. Add a `max`-bound check in the grading schema (needs the assignment's `points` at validation time). Identified 2026-09-08 during the Phase 2 Task 8 code review.
+16. ~~**Assignment grade score has no upper bound.**~~ **Resolved 2026-09-13 (V1 Launch Gate item 2).** `saveGradeAction` (`app/admin/grading/actions.ts`) now `findUnique`s the submission's `assignment.points` before writing and throws (`ActionError`) when `score > points` — a grader typo (e.g. 25 on a 20-point assignment) is rejected with the real ceiling in the message, not silently stored. (The zod schema itself still can't express this — the ceiling is data-dependent — so the check stays in the action body; Task 8's `pct()` display-side clamp in `lib/results/queries.ts` is unaffected and now backed by a real invariant instead of just papering over it.) Covered by `e2e/admin-grading.spec.ts`'s new "rejects a score above the assignment's points" test (data-dependent on a pending submission existing, same limitation as the pre-existing grading smoke test in that file). Identified 2026-09-08 during the Phase 2 Task 8 code review.
+
+17. **No `checkout planId` ↔ DB `Program` mapping; Stripe payments aren't linked to an enrollment.** The public checkout (`app/checkout/actions.ts`) sends a `lib/programmes.ts` / `lib/pricing.ts` catalogue id (`group-french-a0-a2`, `tcfTefBeginner`) as `planId`; `Program` has no price/plan column, so `app/api/stripe/webhook/route.ts` records the `Payment` with `source = STRIPE` but leaves `programId` / `enrollmentId` null — an admin links it by hand on `/admin/payments`. A future task adds a `Program.plan` (or `Payment.checkoutPlanId` + resolver) so a Stripe payment reliably attaches to its program/enrollment; even then, activation stays admin-approved (§6 decision B) unless a separate product decision changes that. Identified 2026-09-09 during Phase 2 Task 9.
+
+18. **`/admin/payments` has no single cross-currency revenue figure.** After the Task 9 code review, `getPaymentsOverview()` keeps this-month revenue **per currency** (never summed across currencies) and the 6-month chart plots the single highest-volume currency, labelled with its code. A true consolidated figure would need a reporting currency + an FX rate captured at payment time; that is deferred. Identified 2026-09-09 during Phase 2 Task 9.
+
+19. **No admin student-detail route.** SPEC §11.2 asks for a `/admin/students/[id]` detail view (overview / enrollments / groups / progress / submissions / results / attendance / payments / notes). Tasks 9–11 surfaced payments, enrollment lifecycle and account status inside the existing `/admin/students` table + Manage dialog instead. The dedicated per-student page with the full breakdown is still its own task. (The student **hard-delete** half of this issue was closed by Task 11 — see #2.) Identified 2026-09-09 during Phase 2 Task 9; narrowed 2026-09-10 during Phase 2 Task 11.
+
+20. **A CANCELLED-only student cannot reach `/dashboard/billing`.** The dashboard shell (`app/dashboard/layout.tsx`) renders `OnboardingEmptyState` when `hasVisibleEnrollment` is false, and `VISIBLE_ENROLLMENT_STATUSES` excludes `CANCELLED` — so a student who paid and was later cancelled can't see their own payment history. It was worse before (ACTIVE-only gate). Needs a product decision: either give billing its own auth gate independent of the shell, or add `CANCELLED` to what the shell shows. Identified 2026-09-09 during the Phase 2 Task 9 code review.
+
+21. **`updatePaymentStatusAction` (Mark refunded) records no actor/timestamp.** The refund is guarded (`PAID → REFUNDED` only, existence-checked, confirmation dialog) but `Payment` has no `refundedById` / `refundedAt` — the audit trail only shows the row is now `REFUNDED`, not who did it or when. Add those columns with the next `Payment` migration. Identified 2026-09-09 during the Phase 2 Task 9 code review.
+
+22. **Announcement / communication-event behaviours intentionally left minimal (Task 10).** (a) Editing an announcement *after* it is published updates the stored record and the student feed but does **not** re-notify anyone who already received it — deliberate, to avoid re-pinging a whole cohort over a typo fix. (b) Per-user notification opt-out is still not implemented (see #4) — every eligible recipient of an announcement / event gets it. (c) `Notification` rows are not pruned when an announcement is archived or deleted; the archived record + its delivery history are kept on purpose. (d) The admin delivery tally shows `reached` = IN_APP `SENT` (the authoritative "sent to N students") plus, of those, how many did not get the email (`emailSkipped` when delivery is unconfigured, `emailFailed` on a provider error). (e) `ASSIGNMENT_GRADED` dedupe key is `submissionId:score`, so a grade corrected `85 → 90 → 85` does not re-notify on the revert to the original value (the student already saw "85"); `ENROLLMENT_CHANGED` keys on `updatedAt` so every real transition notifies. (f) ~~`Announcement.createdBy` is `onDelete: Cascade`~~ — **fixed 2026-09-10 (Task 11):** `createdById` is now nullable with `onDelete: SetNull`, and `listAdminAnnouncements` renders a missing author as "A former admin". (Admin accounts are archived, never deleted, so this stays latent — but the schema is now consistent either way.) Identified 2026-09-09 during Phase 2 Task 10.
+
+23. **Account-lifecycle follow-ups intentionally left minimal (Task 11).** (a) Settings → Profile / Notifications / Language / 2FA tabs are still static placeholders — only the Security → Change Password card is wired; a full Settings de-fake (and the notification opt-out of #4) is its own task. (b) `AccountToken` rows are pruned only opportunistically — `mintToken` deletes a user's prior unconsumed token of the same purpose, `consumeAccountToken` deletes siblings on use, and `deactivateUser` deletes all of the user's tokens — so expired/consumed rows for accounts that never re-request accumulate; a periodic sweep (`DELETE FROM account_tokens WHERE expires_at < now() - interval '30 days'`) is deferred. (c) Accepting an invite lands on `/SignIn` rather than auto-signing-in (public `signIn()` from a server component is awkward; the extra sign-in step is acceptable). (d) OAuth is **not** an invite-claim path — an INVITED account whose email matches a Google/Facebook login is refused by the `signIn` callback; the invitee must use the emailed link. (e) `getSessionUser` now costs one extra indexed PK lookup per protected request (deduped per render by React `cache`) — a deliberate correctness-over-latency trade for immediate deactivation/role changes (SPEC §5.5). (f) A password reset or in-app change stamps `User.passwordChangedAt`; `getSessionUser` rejects a JWT whose `iat` predates it, so the user is signed out of every session (including the one that changed it — the Change Password card says so) and must sign in again — the stateless-JWT equivalent of session revocation. (g) The `/invite/[token]` and `/reset-password/[token]` tokens ride in the URL path (browser history / server logs); single-use + short TTL + the default `Referrer-Policy` contain this, but an explicit `Referrer-Policy: no-referrer` on those two routes and scrubbing tokens from access logs is deferred hardening. (h) The password-reset rate-limit key uses `getClientIp` (leftmost `x-forwarded-for`), spoofable on a non-sanitising proxy — same root issue as #11. Identified 2026-09-10 during Phase 2 Task 11.
+
+24. **V1 Launch Gate follow-ups (non-blocking).** From the `security-reviewer` / `code-reviewer` pass on the Launch Gate: (a) the new "rejects a score above the assignment's points" test (`e2e/admin-grading.spec.ts`, #16 above) shares the same seeded-pending-submission it grades against with the pre-existing smoke test in that file, and that pool only shrinks over repeated runs — once it's exhausted both tests skip (`test.skip`, same accepted pattern as the original test) rather than fail; a deterministic unit test on an extracted pure bound-check would give non-decaying coverage. (b) `app/checkout/actions.ts#getOrigin()` builds the redirect origin from `x-forwarded-host`/`x-forwarded-proto` directly, pre-dating (and not going through) `lib/app-url.ts#getAppOrigin()` (Task 11), which exists specifically because forwarded headers are attacker-influenceable behind a misconfigured proxy; unifying it is a follow-up, not introduced by the Launch Gate. (c) `e2e/pricing.spec.ts`'s checkout-handoff test now asserts the manual-enrollment notice (accurate today, since `STRIPE_SECRET_KEY` is unset) — it will need a branch on `isStripeConfigured` once Stripe is actually turned on for a given environment, or it will fail (not skip). (d) `prisma/create-admin.ts` takes the admin password as a plain-text environment value on the command line (shell history / process-list exposure) — acceptable for a one-time, human-run ops script per `docs/LAUNCH_GATE.md`'s guidance to rotate it immediately afterward, but worth a proper secrets-manager-backed flow if this becomes a repeated operation. Identified 2026-09-13 during the V1 Launch Gate review.
 
 This history should support future administrative auditing and troubleshooting.

@@ -1,330 +1,146 @@
-"use client";
-
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  CreditCard,
-  Download,
-  CheckCircle2,
-  Calendar,
-} from "lucide-react";
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+} from "@/components/ui/table";
+import { CreditCard, Landmark, Receipt } from "lucide-react";
+import { getSessionUser } from "@/lib/authz";
+import { getStudentBilling } from "@/lib/billing/queries";
+import { formatMoney } from "@/lib/billing/format";
 
-type Subscription = {
-  id: number;
-  plan: string;
-  status: "active" | "inactive";
-  price: string;
-  billingCycle: string;
-  nextBilling: string;
-  features: string[];
+export const dynamic = "force-dynamic";
+
+const STATUS_BADGE: Record<string, string> = {
+  PAID: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+  REFUNDED: "bg-slate-100 text-slate-700 hover:bg-slate-100",
+  UNPAID: "bg-amber-100 text-amber-700 hover:bg-amber-100",
+  OVERDUE: "bg-red-100 text-red-700 hover:bg-red-100",
 };
 
-type Invoice = {
-  id: number;
-  date: string;
-  description: string;
-  amount: string;
-  status: "paid" | "pending";
+const ENROLLMENT_BADGE: Record<string, string> = {
+  PENDING: "bg-slate-100 text-slate-600 hover:bg-slate-100",
+  ACTIVE: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50",
+  PAUSED: "bg-amber-50 text-amber-700 hover:bg-amber-50",
+  COMPLETED: "bg-sky-50 text-sky-700 hover:bg-sky-50",
+  CANCELLED: "bg-red-50 text-red-600 hover:bg-red-50",
 };
 
-type PaymentMethod = {
-  id: number;
-  type: string;
-  last4: string;
-  expiry: string;
-  isDefault: boolean;
-};
+function fmtDate(d: Date | null) {
+  return d
+    ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "—";
+}
 
-const subscriptions: Subscription[] = [
-  {
-    id: 1,
-    plan: "TCF Premium Package",
-    status: "active",
-    price: "$199",
-    billingCycle: "Monthly",
-    nextBilling: "Apr 13, 2026",
-    features: [
-      "Unlimited lessons",
-      "Live classes",
-      "Mock tests",
-      "Personal tutor support",
-    ],
-  },
-  {
-    id: 2,
-    plan: "TEF Standard Package",
-    status: "active",
-    price: "$149",
-    billingCycle: "Monthly",
-    nextBilling: "Apr 13, 2026",
-    features: ["50 lessons/month", "Live classes", "Mock tests"],
-  },
-];
+export default async function Billing() {
+  const user = await getSessionUser();
+  if (!user?.id) {
+    redirect("/SignIn");
+  }
 
-const invoices: Invoice[] = [
-  {
-    id: 1,
-    date: "Mar 13, 2026",
-    description: "TCF Premium Package - Monthly",
-    amount: "$199.00",
-    status: "paid",
-  },
-  {
-    id: 2,
-    date: "Mar 13, 2026",
-    description: "TEF Standard Package - Monthly",
-    amount: "$149.00",
-    status: "paid",
-  },
-  {
-    id: 3,
-    date: "Feb 13, 2026",
-    description: "TCF Premium Package - Monthly",
-    amount: "$199.00",
-    status: "paid",
-  },
-  {
-    id: 4,
-    date: "Feb 13, 2026",
-    description: "TEF Standard Package - Monthly",
-    amount: "$149.00",
-    status: "paid",
-  },
-  {
-    id: 5,
-    date: "Jan 13, 2026",
-    description: "TCF Premium Package - Monthly",
-    amount: "$199.00",
-    status: "paid",
-  },
-];
+  const { payments, enrollments, isEmpty } = await getStudentBilling(user.id);
 
-const paymentMethods: PaymentMethod[] = [
-  {
-    id: 1,
-    type: "Visa",
-    last4: "4242",
-    expiry: "12/2027",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    type: "Mastercard",
-    last4: "8888",
-    expiry: "06/2026",
-    isDefault: false,
-  },
-];
-
-export default function Billing() {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Billing</h1>
-        <p className="mt-2 text-slate-600">
-          Manage your subscriptions and payment methods
-        </p>
+        <p className="mt-2 text-slate-600">Your payment history and enrollments</p>
       </div>
 
-      {/* Active Subscriptions */}
-      <div>
-        <h2 className="mb-4 text-xl font-bold text-slate-900">
-          Active Subscriptions
-        </h2>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {subscriptions.map((subscription) => (
-            <Card key={subscription.id} className="border-sky-200 p-6">
-              <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {subscription.plan}
-                  </h3>
-
-                  <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                    Active
-                  </Badge>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-sky-600">
-                    {subscription.price}
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {subscription.billingCycle}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="mb-2 text-sm text-slate-600">Features:</p>
-
-                <ul className="space-y-2">
-                  {subscription.features.map((feature, index) => (
-                    <li
-                      key={index}
-                      className="flex items-center gap-2 text-sm text-slate-700"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-4 text-sm text-slate-600">
-                <Calendar className="h-4 w-4 text-sky-500" />
-                <span>Next billing: {subscription.nextBilling}</span>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-slate-300"
-                >
-                  Manage Plan
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Payment Methods */}
-      <div>
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-xl font-bold text-slate-900">
-            Payment Methods
-          </h2>
-
-          <Button className="bg-gradient-to-r from-sky-500 to-cyan-500 text-white hover:from-sky-600 hover:to-cyan-600">
-            Add Payment Method
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {paymentMethods.map((method) => (
-            <Card key={method.id} className="p-6">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-sky-400 to-cyan-500">
-                    <CreditCard className="h-6 w-6 text-white" />
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      {method.type} •••• {method.last4}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Expires {method.expiry}
+      {/* Enrollments */}
+      {enrollments.length > 0 && (
+        <div>
+          <h2 className="mb-4 text-xl font-bold text-slate-900">Enrollments</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {enrollments.map((e) => (
+              <Card key={e.programName} className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900">{e.programName}</h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Joined {fmtDate(e.joinedAt)}
+                      {e.endedAt ? ` · ended ${fmtDate(e.endedAt)}` : ""}
                     </p>
                   </div>
-                </div>
-
-                {method.isDefault && (
-                  <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100">
-                    Default
+                  <Badge variant="secondary" className={ENROLLMENT_BADGE[e.status]}>
+                    {e.status.toLowerCase()}
                   </Badge>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                {!method.isDefault && (
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-slate-300"
-                  >
-                    Set as Default
-                  </Button>
-                )}
-
-                <Button
-                  variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
-                >
-                  Remove
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Billing History */}
-      <div>
-        <h2 className="mb-4 text-xl font-bold text-slate-900">
-          Billing History
-        </h2>
-
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-slate-900">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-slate-900">
-                    Description
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-slate-900">
-                    Amount
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-slate-900">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-slate-900">
-                    Invoice
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-200">
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm text-slate-700">
-                      {invoice.date}
-                    </td>
-
-                    <td className="px-6 py-4 text-sm text-slate-900">
-                      {invoice.description}
-                    </td>
-
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                      {invoice.amount}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
-                        {invoice.status}
-                      </Badge>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-sky-600 hover:bg-sky-50 hover:text-sky-700"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </div>
+              </Card>
+            ))}
           </div>
-        </Card>
+        </div>
+      )}
+
+      {/* Payment history */}
+      <div>
+        <h2 className="mb-4 text-xl font-bold text-slate-900">Payment history</h2>
+
+        {isEmpty ? (
+          <Card className="p-8 md:p-12 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-sky-100">
+              <Receipt className="h-7 w-7 text-sky-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">No payments recorded yet</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+              When you make a payment, or the institute records one for you, it will appear here with
+              its amount, date and reference.
+            </p>
+          </Card>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Program</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Reference</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm text-slate-700">{fmtDate(p.paidAt)}</TableCell>
+                      <TableCell className="text-sm text-slate-900">
+                        {p.programName ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-slate-900">
+                        {formatMoney(p.amountCents, p.currency)}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        <span className="inline-flex items-center gap-1.5">
+                          {p.source === "STRIPE" ? (
+                            <>
+                              <CreditCard className="h-3.5 w-3.5 text-slate-400" />
+                              Card
+                            </>
+                          ) : (
+                            <>
+                              <Landmark className="h-3.5 w-3.5 text-slate-400" />
+                              {p.method ?? "Manual"}
+                            </>
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_BADGE[p.status] ?? STATUS_BADGE.UNPAID}>
+                          {p.status.toLowerCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-500">
+                        {p.reference ?? "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -12,7 +12,13 @@
 export type NotificationTypeValue =
   | 'CLASS_REMINDER'
   | 'CLASS_CANCELLED'
-  | 'CLASS_RESCHEDULED';
+  | 'CLASS_RESCHEDULED'
+  | 'ANNOUNCEMENT'
+  | 'ASSIGNMENT_PUBLISHED'
+  | 'ASSIGNMENT_GRADED'
+  | 'ENROLLMENT_CHANGED'
+  | 'ASSESSMENT_GRADED'
+  | 'LESSON_PUBLISHED';
 
 export type NotificationChannelValue = 'EMAIL' | 'IN_APP';
 

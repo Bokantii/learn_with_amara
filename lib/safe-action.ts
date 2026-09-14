@@ -1,7 +1,17 @@
 import { createSafeActionClient } from 'next-safe-action';
 import { getSessionUser } from './authz';
+import { ActionError } from './action-error';
 
-const actionClient = createSafeActionClient();
+const actionClient = createSafeActionClient({
+  // Forward an intentional `ActionError` message to the client (guard failures,
+  // validation the schema can't express). Anything else is an unexpected fault:
+  // log it server-side and return a generic message so internals never leak.
+  handleServerError(e) {
+    if (e instanceof ActionError) return e.message;
+    console.error('Unexpected action error:', e);
+    return 'Something went wrong. Please try again.';
+  },
+});
 
 /**
  * No auth middleware — for genuinely public mutations (the anonymous placement
@@ -15,7 +25,7 @@ export const adminActionClient = actionClient.use(async ({ next }) => {
   const user = await getSessionUser();
 
   if (!user || user.role !== 'ADMIN') {
-    throw new Error('Unauthorized: admin access required.');
+    throw new ActionError('Unauthorized: admin access required.');
   }
 
   return next({ ctx: { adminId: user.id } });
@@ -25,7 +35,7 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   const user = await getSessionUser();
 
   if (!user?.id) {
-    throw new Error('You must be signed in to do that.');
+    throw new ActionError('You must be signed in to do that.');
   }
 
   return next({ ctx: { userId: user.id } });
@@ -41,7 +51,7 @@ export const staffActionClient = actionClient.use(async ({ next }) => {
   const user = await getSessionUser();
 
   if (!user || (user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR')) {
-    throw new Error('Unauthorized: staff access required.');
+    throw new ActionError('Unauthorized: staff access required.');
   }
 
   return next({ ctx: { staffId: user.id, staffRole: user.role } });

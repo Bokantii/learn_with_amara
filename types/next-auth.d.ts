@@ -10,6 +10,8 @@ declare module 'next-auth' {
     user: {
       id: string;
       role?: Role;
+      /** JWT `iat` (seconds) — compared against `User.passwordChangedAt` to evict stale tokens. */
+      tokenIssuedAt?: number;
     } & DefaultSession['user'];
   }
 }

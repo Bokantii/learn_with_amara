@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { put } from '@vercel/blob';
-import { auth } from '../../../auth';
+import { getSessionUser } from '../../../lib/authz';
 import { prisma } from '../../../lib/prisma';
 
 export async function submitAssignmentAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return { error: 'You must be signed in to submit an assignment.' };
   }
 
@@ -22,7 +22,7 @@ export async function submitAssignmentAction(formData: FormData) {
   }
 
   const existing = await prisma.submission.findFirst({
-    where: { studentId: session.user.id, assignmentId },
+    where: { studentId: user.id, assignmentId },
   });
   if (existing) {
     return { error: 'You already submitted this assignment.' };
@@ -31,7 +31,7 @@ export async function submitAssignmentAction(formData: FormData) {
   let fileUrl: string;
   try {
     const blob = await put(
-      `submissions/${session.user.id}/${assignmentId}-${file.name}`,
+      `submissions/${user.id}/${assignmentId}-${file.name}`,
       file,
       { access: 'public', addRandomSuffix: true }
     );
@@ -43,7 +43,7 @@ export async function submitAssignmentAction(formData: FormData) {
 
   await prisma.submission.create({
     data: {
-      studentId: session.user.id,
+      studentId: user.id,
       assignmentId,
       fileUrl,
     },

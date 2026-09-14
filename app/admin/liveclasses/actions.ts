@@ -2,31 +2,19 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import * as Sentry from '@sentry/nextjs';
 import { adminActionClient } from '../../../lib/safe-action';
 import { prisma } from '../../../lib/prisma';
 import {
   sendLiveClassCancellation,
   sendLiveClassReschedule,
 } from '../../../lib/notifications/liveclass';
+import { notifySafely } from '../../../lib/notifications/safe';
 
 async function assertGroupBelongsToProgram(groupId: string | undefined, programId: string) {
   if (!groupId) return;
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.programId !== programId) {
     throw new Error('Selected group does not belong to the selected program.');
-  }
-}
-
-/** Fire a class-communication send without letting a delivery failure roll back or mask the persisted state change. */
-async function notifySafely(
-  run: () => Promise<unknown>,
-  context: { action: string; liveClassId: string }
-): Promise<void> {
-  try {
-    await run();
-  } catch (error) {
-    Sentry.captureException(error, { extra: context });
   }
 }
 

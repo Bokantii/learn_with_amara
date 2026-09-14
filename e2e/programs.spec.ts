@@ -40,7 +40,9 @@ test('admin enrolls an unenrolled student in a second program without corrupting
   await row.getByRole('button', { name: 'Manage' }).click();
 
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('TCF Exam Preparation')).toBeVisible();
+  // `exact` — the Manage dialog now also lists payments, whose rows mention the
+  // program name in a longer string ("Jan 13, 2026 · TCF Exam Preparation · …").
+  await expect(dialog.getByText('TCF Exam Preparation', { exact: true })).toBeVisible();
   await dialog.getByLabel('Enroll in another program').click();
   await page.getByRole('option').first().click();
   await dialog.getByRole('button', { name: 'Enroll' }).click();

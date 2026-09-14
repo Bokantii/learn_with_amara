@@ -2,11 +2,11 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
-import { resend, EMAIL_FROM } from '../../../lib/email';
-import GradePostedEmail from '../../../emails/GradePostedEmail';
+import { sendAssignmentGradedNotification } from '../../../lib/notifications/events';
+import { notifySafely } from '../../../lib/notifications/safe';
 
 const saveGradeSchema = z.object({
   submissionId: z.string().min(1),
@@ -14,16 +14,25 @@ const saveGradeSchema = z.object({
   feedback: z.string().trim().optional(),
 });
 
-async function getOrigin() {
-  const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http';
-  return `${protocol}://${host}`;
-}
-
 export const saveGradeAction = adminActionClient
   .schema(saveGradeSchema)
   .action(async ({ parsedInput }) => {
+    // The schema can't know the assignment's point value, so the ceiling is
+    // checked here — a typo like "250" on a 20-point assignment is otherwise
+    // accepted and stored (Known Deferred Issue #16).
+    const existing = await prisma.submission.findUnique({
+      where: { id: parsedInput.submissionId },
+      select: { assignment: { select: { points: true } } },
+    });
+    if (!existing) {
+      throw new ActionError('That submission could not be found.');
+    }
+    if (parsedInput.score > existing.assignment.points) {
+      throw new ActionError(
+        `Score cannot exceed the assignment's ${existing.assignment.points} points.`
+      );
+    }
+
     const submission = await prisma.submission.update({
       where: { id: parsedInput.submissionId },
       data: {
@@ -31,33 +40,18 @@ export const saveGradeAction = adminActionClient
         score: parsedInput.score,
         feedback: parsedInput.feedback || null,
       },
-      include: { student: true, assignment: true },
+      select: { id: true },
     });
 
     revalidatePath('/admin/grading');
     revalidatePath('/admin');
     revalidatePath('/dashboard/assignments');
 
-    try {
-      const appUrl = await getOrigin();
-      const { error } = await resend.emails.send({
-        from: EMAIL_FROM,
-        to: submission.student.email,
-        subject: `Your grade for "${submission.assignment.title}" is in`,
-        react: GradePostedEmail({
-          studentName: submission.student.name,
-          assignmentTitle: submission.assignment.title,
-          score: parsedInput.score,
-          feedback: parsedInput.feedback,
-          appUrl,
-        }),
-      });
-      if (error) {
-        console.error('Failed to send grade-posted email:', error);
-      }
-    } catch (error) {
-      console.error('Failed to send grade-posted email:', error);
-    }
+    // Grade-posted notification (in-app + email) via the central dispatcher.
+    await notifySafely(() => sendAssignmentGradedNotification(submission.id), {
+      event: 'assignment-graded',
+      submissionId: submission.id,
+    });
 
     return { success: true };
   });

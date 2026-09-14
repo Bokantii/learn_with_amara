@@ -48,6 +48,22 @@ const assessmentAttemptLimiter = redis
     })
   : null;
 
+const passwordResetLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '60 s'),
+      prefix: 'ratelimit:pwreset',
+    })
+  : null;
+
+const inviteAcceptLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, '60 s'),
+      prefix: 'ratelimit:invite-accept',
+    })
+  : null;
+
 /** Whether a real Upstash backend is wired up. When false, every `check()` allows. */
 export const rateLimitConfigured = redis != null;
 
@@ -80,6 +96,16 @@ export function checkAttendanceCheckInRateLimit(key: string) {
 /** Limits how often a user can start a fresh assessment attempt. */
 export function checkAssessmentAttemptRateLimit(key: string) {
   return check(assessmentAttemptLimiter, key);
+}
+
+/** Limits password-reset requests (keyed by IP + email) — throttles enumeration probing. */
+export function checkPasswordResetRateLimit(key: string) {
+  return check(passwordResetLimiter, key);
+}
+
+/** Limits invite / reset token submissions (keyed by IP) — throttles token guessing. */
+export function checkInviteAcceptRateLimit(key: string) {
+  return check(inviteAcceptLimiter, key);
 }
 
 export function getClientIp(requestHeaders: Headers): string {

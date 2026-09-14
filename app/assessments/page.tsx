@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ClipboardCheck, GraduationCap, History } from 'lucide-react';
 import { getSessionUser } from '@/lib/authz';
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from '@/lib/enrollment/status';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export default async function AssessmentsHubPage() {
       select: { id: true, title: true, description: true },
     }),
     prisma.enrollment.findMany({
-      where: { userId: user.id, status: { not: 'CANCELLED' } },
+      where: { userId: user.id, status: { in: CONTENT_ACCESS_ENROLLMENT_STATUSES } },
       select: { programId: true },
     }),
   ]);

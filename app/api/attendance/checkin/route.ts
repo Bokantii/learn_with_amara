@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
-import { auth } from '../../../../auth';
+import { getSessionUser } from '../../../../lib/authz';
 import { checkInToAttendanceSession, type CheckInFailureReason } from '../../../../lib/attendance/checkin';
 
 export const dynamic = 'force-dynamic';
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Cross-site request rejected.' }, { status: 403 });
   }
 
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return NextResponse.json({ ok: false, error: 'Authentication required.' }, { status: 401 });
   }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await checkInToAttendanceSession({
       rawToken: token,
-      studentUserId: session.user.id,
+      studentUserId: user.id,
     });
 
     if (result.ok) {

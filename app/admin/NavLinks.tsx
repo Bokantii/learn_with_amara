@@ -4,18 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ClipboardList, GraduationCap, DollarSign, UsersRound, BookOpen, Video,
-  FileQuestion,
+  FileQuestion, Megaphone, ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
   { path: "/admin", label: "Overview", icon: LayoutDashboard },
   { path: "/admin/students", label: "Students", icon: Users },
+  { path: "/admin/staff", label: "Staff", icon: ShieldCheck },
   { path: "/admin/programs", label: "Programs", icon: BookOpen },
   { path: "/admin/groups", label: "Groups", icon: UsersRound },
   { path: "/admin/liveclasses", label: "Live Classes", icon: Video },
   { path: "/admin/assignments", label: "Assignments", icon: ClipboardList },
   { path: "/admin/assessments", label: "Assessments", icon: FileQuestion },
   { path: "/admin/grading", label: "Grading", icon: GraduationCap },
+  { path: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { path: "/admin/payments", label: "Payments", icon: DollarSign },
 ];
 

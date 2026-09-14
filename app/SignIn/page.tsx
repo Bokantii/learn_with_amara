@@ -132,9 +132,9 @@ export default function SignIn() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
-                      <button type="button" className="text-sm text-primary hover:underline">
+                      <Link href="/reset-password" className="text-sm text-primary hover:underline">
                         Forgot password?
-                      </button>
+                      </Link>
                     </div>
                     <div className="relative">
                       <Input

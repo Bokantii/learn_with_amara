@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { User } from "lucide-react";
-import { getSessionUser, hasActiveEnrollment } from "../../lib/authz";
+import { getSessionUser, hasVisibleEnrollment } from "../../lib/authz";
 import { getUnreadNotificationCount, getRecentNotifications } from "../../lib/notifications/queries";
 import { NotificationBell } from "../../components/NotificationBell";
 import NavLinks from "./NavLinks";
@@ -17,7 +17,9 @@ export default async function DashboardLayout({
     redirect("/SignIn");
   }
 
-  const enrolled = await hasActiveEnrollment(user.id);
+  // The dashboard shell shows for any student with a non-cancelled enrollment
+  // (PENDING / PAUSED / COMPLETED included) — course content is gated separately.
+  const enrolled = await hasVisibleEnrollment(user.id);
   const displayName = user.name ?? user.email ?? "there";
   const firstName = displayName.split(" ")[0];
   const [unreadCount, notifications] = await Promise.all([

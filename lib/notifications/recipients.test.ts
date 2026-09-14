@@ -12,7 +12,11 @@ vi.mock('../prisma', () => ({
   },
 }));
 
-import { resolveLiveClassRecipients } from './recipients';
+import {
+  resolveLiveClassRecipients,
+  resolveProgramGroupRecipientIds,
+  resolveAllStudentRecipientIds,
+} from './recipients';
 import { NOTIFY_ENROLLMENT_STATUSES } from '../live-class-entitlement';
 
 const USERS = [
@@ -88,5 +92,35 @@ describe('resolveLiveClassRecipients', () => {
 
     expect(recipients).toEqual([]);
     expect(userFindMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveProgramGroupRecipientIds', () => {
+  it('returns NOTIFY-status STUDENT enrollees of a program', async () => {
+    enrollmentFindMany.mockResolvedValue([{ userId: 'a' }, { userId: 'b' }]);
+    const ids = await resolveProgramGroupRecipientIds('p1');
+    expect(ids.sort()).toEqual(['a', 'b']);
+    const where = enrollmentFindMany.mock.calls[0][0].where;
+    expect(where).toMatchObject({
+      programId: 'p1',
+      status: { in: NOTIFY_ENROLLMENT_STATUSES },
+      user: { role: 'STUDENT' },
+    });
+  });
+
+  it('intersects with current group membership', async () => {
+    enrollmentFindMany.mockResolvedValue([{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }]);
+    groupMembershipFindMany.mockResolvedValue([{ userId: 'b' }]);
+    expect(await resolveProgramGroupRecipientIds('p1', 'g1')).toEqual(['b']);
+  });
+});
+
+describe('resolveAllStudentRecipientIds', () => {
+  it('returns distinct student ids with a NOTIFY enrollment', async () => {
+    enrollmentFindMany.mockResolvedValue([{ userId: 'a' }, { userId: 'b' }]);
+    const ids = await resolveAllStudentRecipientIds();
+    expect(ids.sort()).toEqual(['a', 'b']);
+    const where = enrollmentFindMany.mock.calls[0][0].where;
+    expect(where).toEqual({ status: { in: NOTIFY_ENROLLMENT_STATUSES }, user: { role: 'STUDENT' } });
   });
 });

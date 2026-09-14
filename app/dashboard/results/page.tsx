@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, TrendingUp, Award, Eye, ClipboardList, GraduationCap } from "lucide-react";
-import { getSessionUser, hasActiveEnrollment } from "@/lib/authz";
+import { getSessionUser, hasVisibleEnrollment } from "@/lib/authz";
 import { getStudentResults } from "@/lib/results/queries";
 import { hasMeaningfulSkillData } from "@/lib/results/analytics";
 import { cefrLabel } from "@/lib/assessments/placement";
@@ -25,7 +25,7 @@ export default async function Results() {
   // Defense-in-depth: the dashboard layout already swaps in the onboarding state
   // for an unenrolled user, but don't run the result queries without a
   // page-level entitlement check of our own.
-  if (!(await hasActiveEnrollment(user.id))) {
+  if (!(await hasVisibleEnrollment(user.id))) {
     redirect("/dashboard");
   }
 

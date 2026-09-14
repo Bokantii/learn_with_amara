@@ -28,7 +28,11 @@ describe('isUserEntitledToLiveClass', () => {
     await isUserEntitledToLiveClass('u1', { programId: 'p1', groupId: null });
 
     expect(enrollmentFindMany).toHaveBeenCalledWith({
-      where: { programId: 'p1', status: { in: VISIBLE_ENROLLMENT_STATUSES } },
+      where: {
+        programId: 'p1',
+        status: { in: VISIBLE_ENROLLMENT_STATUSES },
+        user: { role: 'STUDENT' },
+      },
       select: { userId: true },
     });
     expect(VISIBLE_ENROLLMENT_STATUSES).not.toEqual(NOTIFY_ENROLLMENT_STATUSES);
@@ -56,7 +60,11 @@ describe('isUserEntitledToLiveClass', () => {
     await isUserEntitledToLiveClass('u1', { programId: 'p1', groupId: null }, NOTIFY_ENROLLMENT_STATUSES);
 
     expect(enrollmentFindMany).toHaveBeenCalledWith({
-      where: { programId: 'p1', status: { in: NOTIFY_ENROLLMENT_STATUSES } },
+      where: {
+        programId: 'p1',
+        status: { in: NOTIFY_ENROLLMENT_STATUSES },
+        user: { role: 'STUDENT' },
+      },
       select: { userId: true },
     });
   });

@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { authActionClient } from '../../lib/safe-action';
-import { stripe } from '../../lib/stripe';
+import { ActionError } from '../../lib/action-error';
+import { stripe, isStripeConfigured } from '../../lib/stripe';
 import { translations } from '../../lib/i18n/translations';
 import { PLAN_PRICES_CENTS, DEFAULT_PLAN_ID } from '../../lib/pricing';
 import { findProgrammeById } from '../../lib/programmes';
@@ -24,6 +25,13 @@ async function getOrigin() {
 export const createCheckoutSessionAction = authActionClient
   .schema(createCheckoutSessionSchema)
   .action(async ({ parsedInput, ctx }) => {
+    // Defense in depth — `/checkout` already hides the payment form when
+    // Stripe isn't configured (Launch Gate item 7), but a direct action call
+    // must fail closed too rather than hit the Stripe API with a fake key.
+    if (!isStripeConfigured) {
+      throw new ActionError("Online payment isn't available right now. Please contact us to enroll.");
+    }
+
     const programme = findProgrammeById(parsedInput.planId);
 
     let planId: string;

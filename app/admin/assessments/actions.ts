@@ -6,6 +6,8 @@ import { adminActionClient } from '../../../lib/safe-action';
 import { prisma } from '../../../lib/prisma';
 import { MAX_TEXT_RESPONSE_CHARS } from '../../../lib/assessments/constants';
 import { gradeResponse, finalizeAttempt } from '../../../lib/assessments/review';
+import { sendAssessmentGradedNotification } from '../../../lib/notifications/events';
+import { notifySafely } from '../../../lib/notifications/safe';
 
 /**
  * Admin assessment authoring + manual grading (SPEC §11.9). All actions are
@@ -299,5 +301,12 @@ export const finalizeAttemptAction = adminActionClient
     revalidatePath('/admin/assessments/review');
     revalidatePath(`/admin/assessments/review/${parsedInput.attemptId}`);
     revalidatePath('/assessments/history');
+
+    // The reviewed result is now released — tell the student (skips anonymous attempts).
+    await notifySafely(() => sendAssessmentGradedNotification(parsedInput.attemptId), {
+      event: 'assessment-graded',
+      attemptId: parsedInput.attemptId,
+    });
+
     return { ok: true as const };
   });

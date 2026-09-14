@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "../../../lib/authz";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
 import { prisma } from "../../../lib/prisma";
 import RecordedLessonsClient from "./RecordedLessonsClient";
 
@@ -10,7 +11,7 @@ export default async function RecordedLessonsPage() {
   }
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { userId: user.id, status: { not: "CANCELLED" } },
+    where: { userId: user.id, status: { in: CONTENT_ACCESS_ENROLLMENT_STATUSES } },
     select: { programId: true, program: { select: { name: true } } },
   });
   const programIds = enrollments.map((e) => e.programId);

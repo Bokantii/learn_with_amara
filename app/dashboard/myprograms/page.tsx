@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser } from "../../../lib/authz";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
 import { prisma } from "../../../lib/prisma";
 import { Card } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
@@ -88,19 +89,23 @@ export default async function MyPrograms() {
                 </Badge>
               </div>
 
-              {totalLessons > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-xs md:text-sm mb-1.5">
-                    <span className="text-slate-600">
-                      {completedLessons}/{totalLessons} lessons completed
-                    </span>
-                    <span className="font-medium text-sky-600">
-                      {Math.round((completedLessons / totalLessons) * 100)}%
-                    </span>
+              {totalLessons > 0 &&
+                CONTENT_ACCESS_ENROLLMENT_STATUSES.includes(enrollment.status) && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-xs md:text-sm mb-1.5">
+                      <span className="text-slate-600">
+                        {completedLessons}/{totalLessons} lessons completed
+                      </span>
+                      <span className="font-medium text-sky-600">
+                        {Math.round((completedLessons / totalLessons) * 100)}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={(completedLessons / totalLessons) * 100}
+                      className="h-1.5 bg-slate-200"
+                    />
                   </div>
-                  <Progress value={(completedLessons / totalLessons) * 100} className="h-1.5 bg-slate-200" />
-                </div>
-              )}
+                )}
 
               <div className="flex items-center justify-between">
                 <p className="text-xs md:text-sm text-slate-500">
@@ -111,13 +116,19 @@ export default async function MyPrograms() {
                     year: "numeric",
                   })}
                 </p>
-                {enrollment.status !== "CANCELLED" && (
+                {CONTENT_ACCESS_ENROLLMENT_STATUSES.includes(enrollment.status) ? (
                   <Button asChild size="sm" variant="outline">
                     <Link href={`/dashboard/course/${enrollment.programId}`}>
                       View Lessons
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Link>
                   </Button>
+                ) : enrollment.status === "PENDING" ? (
+                  <span className="text-xs text-slate-400">Awaiting activation</span>
+                ) : enrollment.status === "PAUSED" ? (
+                  <span className="text-xs text-slate-400">Access paused</span>
+                ) : (
+                  <span className="text-xs text-slate-400">Enrollment ended</span>
                 )}
               </div>
             </Card>

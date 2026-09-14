@@ -8,3 +8,12 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_not_c
   apiVersion: '2026-07-29.dahlia',
   typescript: true,
 });
+
+/**
+ * Whether a real secret key is configured — the same truthy-env-var check used
+ * for the other optional integrations (`RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN`).
+ * Gates the public checkout flow: unconfigured, `/checkout` shows an honest
+ * "contact us to enroll" notice instead of a payment form that would fail at
+ * the Stripe API call (Launch Gate item 7 — payments default to manual-only).
+ */
+export const isStripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);

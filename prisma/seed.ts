@@ -13,6 +13,7 @@ async function main() {
       name: 'Demo Student',
       passwordHash: studentPasswordHash,
       role: 'STUDENT',
+      status: 'ACTIVE',
     },
   });
 
@@ -24,6 +25,7 @@ async function main() {
       name: 'Admin User',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
+      status: 'ACTIVE',
     },
   });
 
@@ -35,6 +37,7 @@ async function main() {
       name: 'Instructor User',
       passwordHash: adminPasswordHash,
       role: 'INSTRUCTOR',
+      status: 'ACTIVE',
     },
   });
 
@@ -65,6 +68,10 @@ async function main() {
     // Cohort (g1) below — a same-program, non-group-member fixture for group-scoped
     // entitlement tests (e2e/liveclasses.spec.ts).
     { email: 'noah.park@example.com', name: 'Noah Park', track: 'tcf-exam-prep', status: 'ACTIVE' as const },
+    // Billing fixture (Task 9): enrolled but not yet activated and with no payment
+    // on file — sees the dashboard shell + an empty billing page, but no course
+    // content until an admin moves the enrollment PENDING -> ACTIVE.
+    { email: 'pending.pay@example.com', name: 'Pending Payer', track: 'tcf-exam-prep', status: 'PENDING' as const },
   ];
 
   const studentPasswordHashDefault = await bcrypt.hash('student1234', 10);
@@ -92,6 +99,21 @@ async function main() {
       },
     });
   }
+
+  // The billing fixture also carries a 2nd PENDING enrollment (DELF) so the
+  // multi-enrollment isolation test has stable data without mutating the roster.
+  const pendingPayerId = students.get('pending.pay@example.com')!;
+  await prisma.enrollment.upsert({
+    where: {
+      userId_programId: { userId: pendingPayerId, programId: programs.get('delf-dalf-track')! },
+    },
+    update: { status: 'PENDING' },
+    create: {
+      userId: pendingPayerId,
+      programId: programs.get('delf-dalf-track')!,
+      status: 'PENDING',
+    },
+  });
 
   const groupSeeds = [
     { key: 'g1', name: 'TCF Morning Cohort', track: 'tcf-exam-prep' },
@@ -140,6 +162,10 @@ async function main() {
     { key: 'a3', title: 'DELF B1 Oral Prep Exercise', track: 'delf-dalf-track', dueDate: new Date('2026-04-10'), points: 15, type: 'Exercise', priority: 'low' },
     { key: 'a4', title: 'TCF Morning Cohort Speaking Drill', track: 'tcf-exam-prep', groupKey: 'g1', dueDate: new Date('2026-04-12'), points: 10, type: 'Exercise', priority: 'medium' },
     { key: 'a5', title: 'TCF Reading Comprehension Check', track: 'tcf-exam-prep', dueDate: new Date('2026-03-20'), points: 20, type: 'Quiz', priority: 'medium' },
+    // Dedicated to the announcements E2E "assignment graded" notification check.
+    // HSK3 / priya.nair are referenced by no other spec, so grading this one
+    // never disturbs another test's fixture expectations.
+    { key: 'a6', title: 'HSK3 Character Writing Set 1', track: 'hsk3-prep', dueDate: new Date('2026-04-15'), points: 20, type: 'Practice', priority: 'medium' },
   ];
 
   const assignments = new Map<string, string>(); // key -> id
@@ -165,6 +191,10 @@ async function main() {
     { studentEmail: 'aisha.bello@example.com', assignmentKey: 'a1', submittedAt: new Date('2026-03-28'), status: 'PENDING' as const },
     { studentEmail: 'marcus.chen@example.com', assignmentKey: 'a2', submittedAt: new Date('2026-03-29'), status: 'PENDING' as const },
     { studentEmail: 'lucas.martin@example.com', assignmentKey: 'a1', submittedAt: new Date('2026-03-30'), status: 'PENDING' as const },
+    // Dedicated pending submission the announcements E2E grades to assert the
+    // "assignment graded" notification fires. Grading is one-way, so like the
+    // admin-grading smoke test this path is exercised once per fresh seed.
+    { studentEmail: 'priya.nair@example.com', assignmentKey: 'a6', submittedAt: new Date('2026-04-01'), status: 'PENDING' as const },
     {
       studentEmail: 'elena.rossi@example.com',
       assignmentKey: 'a3',
@@ -200,6 +230,135 @@ async function main() {
           status: seed.status,
           score: 'score' in seed ? seed.score : undefined,
           feedback: 'feedback' in seed ? seed.feedback : undefined,
+        },
+      });
+    }
+  }
+
+  // ─── Payments (Phase 2 Task 9) ─────────────────────────────────────────
+  // Real manual payment records recorded by the admin, each linked to the
+  // enrollment it settles. No fabricated invoices / due dates / card data.
+  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@iclp.com' } });
+  const paymentSeeds = [
+    { studentEmail: 'aisha.bello@example.com', track: 'tcf-exam-prep', amountCents: 30000, currency: 'cad', method: 'Bank transfer', reference: 'ICLP-2026-0142', paidAt: new Date('2026-01-14') },
+    { studentEmail: 'elena.rossi@example.com', track: 'delf-dalf-track', amountCents: 30000, currency: 'cad', method: 'Interac e-Transfer', reference: 'ICLP-2026-0173', paidAt: new Date('2026-01-22') },
+  ];
+  for (const seed of paymentSeeds) {
+    const studentId = students.get(seed.studentEmail)!;
+    const programId = programs.get(seed.track)!;
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { userId_programId: { userId: studentId, programId } },
+      select: { id: true },
+    });
+    const existing = await prisma.payment.findFirst({
+      where: { userId: studentId, reference: seed.reference },
+    });
+    if (!existing) {
+      await prisma.payment.create({
+        data: {
+          userId: studentId,
+          amountCents: seed.amountCents,
+          currency: seed.currency,
+          status: 'PAID',
+          source: 'MANUAL',
+          method: seed.method,
+          reference: seed.reference,
+          programId,
+          enrollmentId: enrollment?.id ?? null,
+          recordedById: adminUser?.id ?? null,
+          paidAt: seed.paidAt,
+        },
+      });
+    }
+  }
+
+  // ─── Account lifecycle fixtures (Phase 2 Task 11) ─────────────────────
+  const lifecycleTcfId = programs.get('tcf-exam-prep')!;
+
+  // An outstanding student invite: provisioned by an admin, never activated
+  // (no password) — exercises the "cannot sign in yet" / "Invited" chip paths.
+  await prisma.user.upsert({
+    where: { email: 'invited.student@example.com' },
+    update: {},
+    create: {
+      email: 'invited.student@example.com',
+      name: 'Ingrid Invited',
+      role: 'STUDENT',
+      status: 'INVITED',
+      passwordHash: null,
+      enrollments: { create: { programId: lifecycleTcfId, status: 'PENDING' } },
+    },
+  });
+
+  // An outstanding staff invite.
+  await prisma.user.upsert({
+    where: { email: 'invited.instructor@example.com' },
+    update: {},
+    create: {
+      email: 'invited.instructor@example.com',
+      name: 'Ivan Pending',
+      role: 'INSTRUCTOR',
+      status: 'INVITED',
+      passwordHash: null,
+    },
+  });
+
+  // A deactivated student WITH history — proves archiving keeps the record and
+  // a later reactivation restores access with the data intact.
+  const archivedStudent = await prisma.user.upsert({
+    where: { email: 'archived.student@example.com' },
+    update: {},
+    create: {
+      email: 'archived.student@example.com',
+      name: 'Archie Archived',
+      passwordHash: studentPasswordHashDefault,
+      role: 'STUDENT',
+      status: 'DEACTIVATED',
+      deactivatedAt: new Date('2026-06-01'),
+      deactivatedById: adminUser?.id ?? null,
+      enrollments: { create: { programId: lifecycleTcfId, status: 'ACTIVE' } },
+    },
+  });
+  {
+    const a1Id = assignments.get('a1');
+    if (a1Id) {
+      const existing = await prisma.submission.findFirst({
+        where: { studentId: archivedStudent.id, assignmentId: a1Id },
+      });
+      if (!existing) {
+        await prisma.submission.create({
+          data: {
+            studentId: archivedStudent.id,
+            assignmentId: a1Id,
+            submittedAt: new Date('2026-05-01'),
+            status: 'GRADED',
+            score: 15,
+            feedback: 'Solid work — kept on file after the account was archived.',
+          },
+        });
+      }
+    }
+    const archivedEnrollment = await prisma.enrollment.findUnique({
+      where: { userId_programId: { userId: archivedStudent.id, programId: lifecycleTcfId } },
+      select: { id: true },
+    });
+    const existingPay = await prisma.payment.findFirst({
+      where: { userId: archivedStudent.id, reference: 'ICLP-2026-0207' },
+    });
+    if (!existingPay) {
+      await prisma.payment.create({
+        data: {
+          userId: archivedStudent.id,
+          amountCents: 30000,
+          currency: 'cad',
+          status: 'PAID',
+          source: 'MANUAL',
+          method: 'Bank transfer',
+          reference: 'ICLP-2026-0207',
+          programId: lifecycleTcfId,
+          enrollmentId: archivedEnrollment?.id ?? null,
+          recordedById: adminUser?.id ?? null,
+          paidAt: new Date('2026-02-01'),
         },
       });
     }
@@ -340,6 +499,40 @@ async function main() {
         },
       });
     }
+  }
+
+  // ─── Announcements (Phase 2 Task 10) ──────────────────────────────────
+  // Authored admin communication — no fake engagement metrics, no seeded
+  // Notification rows (those are created on publish; the student feed reads
+  // announcements directly).
+  const adminId = (await prisma.user.findUnique({ where: { email: 'admin@iclp.com' } }))!.id;
+  const announcementSeeds: {
+    title: string;
+    body: string;
+    scope: 'ALL' | 'PROGRAM' | 'STUDENT';
+    track?: string;
+    studentEmail?: string;
+    published: boolean;
+  }[] = [
+    { title: 'Welcome to the new ICLP dashboard', body: 'Your programs, live classes, results and billing now live in one place. Explore the sidebar and let us know what you think.', scope: 'ALL', published: true },
+    { title: 'TCF Exam Preparation: revised weekly schedule', body: 'Starting next week, TCF prep sessions move 30 minutes earlier. Check Live Classes for the exact times.', scope: 'PROGRAM', track: 'tcf-exam-prep', published: true },
+    { title: 'A note about your placement result', body: 'Hi Aisha — your instructor has some feedback on your last assessment. Book a slot when you can.', scope: 'STUDENT', studentEmail: 'aisha.bello@example.com', published: true },
+    { title: 'Holiday break dates (draft)', body: 'The centre will be closed from Dec 23 to Jan 2. Draft — do not publish yet.', scope: 'ALL', published: false },
+  ];
+  for (const seed of announcementSeeds) {
+    const existing = await prisma.announcement.findFirst({ where: { title: seed.title } });
+    if (existing) continue;
+    await prisma.announcement.create({
+      data: {
+        title: seed.title,
+        body: seed.body,
+        scope: seed.scope,
+        createdById: adminId,
+        publishedAt: seed.published ? new Date('2026-02-01') : null,
+        programId: seed.track ? programs.get(seed.track)! : null,
+        studentId: seed.studentEmail ? students.get(seed.studentEmail)! : null,
+      },
+    });
   }
 
   // ─── Placement assessment + French question bank (Phase 2 Task 7) ────────
@@ -584,7 +777,7 @@ async function main() {
     }
   }
 
-  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), instructor@iclp.com (instructor), 5 programs, 7 students, 2 groups, 5 assignments (1 group-scoped), 5 submissions (2 graded), 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed), 1 published placement assessment (24 French single-choice questions, A1–C1).');
+  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), instructor@iclp.com (instructor), 5 programs, 7 students, 2 groups, 6 assignments (1 group-scoped), 7 submissions (3 graded), 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed), 1 published placement assessment (24 French single-choice questions, A1–C1), 8 students (1 PENDING/unpaid billing fixture), 3 manual payments, 4 announcements (3 published, 1 draft), lifecycle fixtures: invited.student@example.com + invited.instructor@example.com (outstanding invites), archived.student@example.com (deactivated, with a graded submission + payment kept on file).');
 }
 
 main()

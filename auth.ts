@@ -7,6 +7,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from './lib/prisma';
 import { checkLoginRateLimit, getClientIp } from './lib/rate-limit';
+import { canSignIn } from './lib/account/status';
 
 class RateLimitedError extends CredentialsSignin {
   code = 'rate_limited';
@@ -50,11 +51,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // An invited-but-not-activated or deactivated account never gets a session.
+        if (!canSignIn(user.status)) {
+          return null;
+        }
+
         return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],
   callbacks: {
+    signIn: async ({ user, account }) => {
+      // Credentials sign-in is already gated in `authorize`. For an OAuth
+      // provider, block a returning user whose account has since been archived
+      // or is still an unclaimed invite — OAuth is not an invite-claim path.
+      if (account?.provider && account.provider !== 'credentials') {
+        const email = user?.email?.toLowerCase();
+        if (email) {
+          const existing = await prisma.user.findUnique({
+            where: { email },
+            select: { status: true },
+          });
+          if (existing && !canSignIn(existing.status)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    },
     jwt: async ({ token, user }) => {
       if (user) {
         token.role = user.role;
@@ -65,6 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.sub ?? '';
         session.user.role = token.role;
+        session.user.tokenIssuedAt = typeof token.iat === 'number' ? token.iat : undefined;
       }
       return session;
     },

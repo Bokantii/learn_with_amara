@@ -29,8 +29,12 @@ test('group member sees their group on the dashboard and the group assignment al
   await signIn(page, 'aisha.bello@example.com', 'student1234');
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  await expect(page.getByText('My Group')).toBeVisible();
-  await expect(page.getByText('TCF Morning Cohort')).toBeVisible();
+  // Scoped to the "My Group(s)" card — the dashboard's real "Tasks Due" card
+  // (V1 Launch Gate item 1) also shows the real "TCF Morning Cohort Speaking
+  // Drill" assignment title, which substring-matches an unscoped search.
+  const myGroupCard = page.locator('[data-slot="card"]', { hasText: 'My Group' });
+  await expect(myGroupCard).toBeVisible();
+  await expect(myGroupCard.getByText('TCF Morning Cohort', { exact: true })).toBeVisible();
 
   await page.goto('/dashboard/assignments');
   const groupAssignmentCard = page.getByText('TCF Morning Cohort Speaking Drill').locator('..').locator('..');
