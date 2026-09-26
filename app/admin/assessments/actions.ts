@@ -3,9 +3,11 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
 import { MAX_TEXT_RESPONSE_CHARS } from '../../../lib/assessments/constants';
 import { gradeResponse, finalizeAttempt } from '../../../lib/assessments/review';
+import { isAutoGraded } from '../../../lib/assessments/grading';
 import { sendAssessmentGradedNotification } from '../../../lib/notifications/events';
 import { notifySafely } from '../../../lib/notifications/safe';
 
@@ -33,7 +35,7 @@ export const createAssessmentAction = adminActionClient
   .schema(assessmentFields)
   .action(async ({ parsedInput }) => {
     if (parsedInput.type === 'PRACTICE' && !parsedInput.programId) {
-      throw new Error('Practice assessments must be attached to a program.');
+      throw new ActionError('Practice assessments must be attached to a program.');
     }
     const assessment = await prisma.assessment.create({
       data: {
@@ -53,7 +55,7 @@ export const updateAssessmentAction = adminActionClient
   .schema(assessmentFields.extend({ assessmentId: z.string().min(1) }))
   .action(async ({ parsedInput }) => {
     if (parsedInput.type === 'PRACTICE' && !parsedInput.programId) {
-      throw new Error('Practice assessments must be attached to a program.');
+      throw new ActionError('Practice assessments must be attached to a program.');
     }
     await prisma.assessment.update({
       where: { id: parsedInput.assessmentId },
@@ -86,13 +88,13 @@ export const setAssessmentStatusAction = adminActionClient
         select: { id: true, type: true, options: { select: { isCorrect: true } } },
       });
       if (questions.length === 0) {
-        throw new Error('Add at least one active question before publishing.');
+        throw new ActionError('Add at least one active question before publishing.');
       }
       const broken = questions.find(
         (q) => q.type === 'SINGLE_CHOICE' && q.options.filter((o) => o.isCorrect).length !== 1
       );
       if (broken) {
-        throw new Error('Every single-choice question needs exactly one correct option.');
+        throw new ActionError('Every single-choice question needs exactly one correct option.');
       }
     }
     await prisma.assessment.update({
@@ -119,6 +121,19 @@ const questionFields = z.object({
 export const createQuestionAction = adminActionClient
   .schema(questionFields.extend({ assessmentId: z.string().min(1) }))
   .action(async ({ parsedInput }) => {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: parsedInput.assessmentId },
+      select: { type: true },
+    });
+    if (!assessment) {
+      throw new ActionError('That assessment could not be found.');
+    }
+    if (assessment.type === 'PLACEMENT' && !isAutoGraded(parsedInput.type)) {
+      // Placement's CEFR/track result is computed from auto-graded responses
+      // only (lib/assessments/attempt.ts) — a free-text question would leave
+      // that result permanently null even after manual grading.
+      throw new ActionError('Placement assessments only support single-choice questions.');
+    }
     const last = await prisma.question.findFirst({
       where: { assessmentId: parsedInput.assessmentId },
       orderBy: { order: 'desc' },
@@ -143,6 +158,16 @@ export const createQuestionAction = adminActionClient
 export const updateQuestionAction = adminActionClient
   .schema(questionFields.extend({ questionId: z.string().min(1) }))
   .action(async ({ parsedInput }) => {
+    const existing = await prisma.question.findUnique({
+      where: { id: parsedInput.questionId },
+      select: { assessment: { select: { type: true } } },
+    });
+    if (!existing) {
+      throw new ActionError('That question could not be found.');
+    }
+    if (existing.assessment.type === 'PLACEMENT' && !isAutoGraded(parsedInput.type)) {
+      throw new ActionError('Placement assessments only support single-choice questions.');
+    }
     const question = await prisma.question.update({
       where: { id: parsedInput.questionId },
       data: {

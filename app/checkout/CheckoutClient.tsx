@@ -82,7 +82,7 @@ export default function CheckoutClient({
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h1 className="text-4xl lg:text-5xl mb-4">Checkout</h1>
           <p className="text-lg text-muted-foreground">
-            You'll be redirected to Stripe's secure checkout to complete your payment.
+            You&apos;ll be redirected to Stripe&apos;s secure checkout to complete your payment.
           </p>
         </div>
 

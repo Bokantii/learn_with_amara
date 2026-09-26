@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
 
 /**
@@ -37,7 +38,7 @@ export const recordPaymentAction = adminActionClient
       select: { id: true, role: true },
     });
     if (!student || student.role !== 'STUDENT') {
-      throw new Error('That student could not be found.');
+      throw new ActionError('That student could not be found.');
     }
 
     let programId: string | null = null;
@@ -47,17 +48,17 @@ export const recordPaymentAction = adminActionClient
         select: { userId: true, programId: true },
       });
       if (!enrollment || enrollment.userId !== student.id) {
-        throw new Error('That enrollment does not belong to this student.');
+        throw new ActionError('That enrollment does not belong to this student.');
       }
       programId = enrollment.programId;
     }
 
     const paidAt = new Date(parsedInput.paidAt);
     if (Number.isNaN(paidAt.getTime())) {
-      throw new Error('Enter a valid payment date.');
+      throw new ActionError('Enter a valid payment date.');
     }
     if (paidAt.getTime() > Date.now()) {
-      throw new Error('Payment date cannot be in the future.');
+      throw new ActionError('Payment date cannot be in the future.');
     }
 
     const payment = await prisma.payment.create({
@@ -99,10 +100,10 @@ export const updatePaymentStatusAction = adminActionClient
       select: { status: true },
     });
     if (!existing) {
-      throw new Error('That payment could not be found.');
+      throw new ActionError('That payment could not be found.');
     }
     if (existing.status !== 'PAID') {
-      throw new Error('Only a paid payment can be refunded.');
+      throw new ActionError('Only a paid payment can be refunded.');
     }
 
     await prisma.payment.update({

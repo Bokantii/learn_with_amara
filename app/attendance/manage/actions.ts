@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { staffActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
 import { getAppOrigin } from '../../../lib/app-url';
 import { isUserEntitledToLiveClass } from '../../../lib/live-class-entitlement';
@@ -32,7 +33,7 @@ export const startAttendanceSessionAction = staffActionClient
       select: { status: true },
     });
     if (liveClass.status !== 'SCHEDULED') {
-      throw new Error('Attendance can only be started for a scheduled class.');
+      throw new ActionError('Attendance can only be started for a scheduled class.');
     }
 
     const { sessionId, rawToken, expiresAt } = await startAttendanceSession(
@@ -98,7 +99,7 @@ export const setAttendanceOverrideAction = staffActionClient
     // action must not trust that the id came from that list).
     const entitled = await isUserEntitledToLiveClass(parsedInput.studentUserId, liveClass);
     if (!entitled) {
-      throw new Error('That student is not entitled to this class.');
+      throw new ActionError('That student is not entitled to this class.');
     }
 
     await setAttendanceOverride({

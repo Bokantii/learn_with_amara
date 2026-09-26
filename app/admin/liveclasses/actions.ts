@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
 import {
   sendLiveClassCancellation,
@@ -14,7 +15,7 @@ async function assertGroupBelongsToProgram(groupId: string | undefined, programI
   if (!groupId) return;
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.programId !== programId) {
-    throw new Error('Selected group does not belong to the selected program.');
+    throw new ActionError('Selected group does not belong to the selected program.');
   }
 }
 
@@ -39,10 +40,10 @@ function parseAndValidateTimes(startsAt: string, endsAt: string) {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    throw new Error('Invalid date/time.');
+    throw new ActionError('Invalid date/time.');
   }
   if (end <= start) {
-    throw new Error('End time must be after the start time.');
+    throw new ActionError('End time must be after the start time.');
   }
   return { start, end };
 }
@@ -83,7 +84,7 @@ export const updateLiveClassAction = adminActionClient
       where: { id: parsedInput.liveClassId },
     });
     if (existing.status !== 'SCHEDULED') {
-      throw new Error('Only scheduled classes can be edited.');
+      throw new ActionError('Only scheduled classes can be edited.');
     }
 
     await assertGroupBelongsToProgram(parsedInput.groupId, parsedInput.programId);
@@ -142,7 +143,7 @@ export const cancelLiveClassAction = adminActionClient
       select: { status: true },
     });
     if (existing.status !== 'SCHEDULED') {
-      throw new Error('Only scheduled classes can be cancelled.');
+      throw new ActionError('Only scheduled classes can be cancelled.');
     }
 
     await prisma.liveClass.update({

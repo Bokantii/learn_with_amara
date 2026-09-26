@@ -21,6 +21,18 @@ type ChartContextProps = {
   config: ChartConfig;
 };
 
+// Recharts' own Tooltip/Legend prop types are awkward to consume generically
+// (the render-prop payload's item shape isn't exposed as a reusable export at
+// the version pinned here), so these mirror only the fields this file reads.
+type ChartPayloadItem = {
+  dataKey?: string | number;
+  name?: string | number;
+  value?: number | string;
+  color?: string;
+  fill?: string;
+  payload?: { fill?: string } & Record<string, unknown>;
+};
+
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
 function useChart() {
@@ -109,7 +121,10 @@ function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
 const ChartTooltip = Tooltip;
 
 function ChartTooltipContent(
-  props: React.ComponentProps<typeof Tooltip> &
+  props: Omit<
+    React.ComponentProps<typeof Tooltip>,
+    "label" | "labelFormatter" | "formatter" | "payload"
+  > &
     React.HTMLAttributes<HTMLDivElement> & {
       hideLabel?: boolean;
       hideIndicator?: boolean;
@@ -118,6 +133,19 @@ function ChartTooltipContent(
       labelKey?: string;
       labelClassName?: string;
       color?: string;
+      label?: React.ReactNode;
+      labelFormatter?: (
+        label: React.ReactNode,
+        payload: ChartPayloadItem[]
+      ) => React.ReactNode;
+      formatter?: (
+        value: ChartPayloadItem["value"],
+        name: ChartPayloadItem["name"],
+        item: ChartPayloadItem,
+        index: number,
+        payload: ChartPayloadItem["payload"]
+      ) => React.ReactNode;
+      payload?: ChartPayloadItem[];
     }
 ) {
   const {
@@ -131,22 +159,22 @@ function ChartTooltipContent(
     color,
     nameKey,
     labelKey,
+    label,
+    labelFormatter,
+    payload,
   } = props;
-
-  const label = (props as any).label;
-  const labelFormatter = (props as any).labelFormatter;
 
   const { config } = useChart();
 
-  // ✅ No payload typing. Normalize safely at runtime.
-  const safePayload = Array.isArray((props as any).payload)
-    ? ((props as any).payload as any[])
-    : [];
+  // Normalized safely at runtime — Recharts calls this with whatever shape the
+  // active chart type produces. Memoized so the tooltipLabel useMemo below
+  // doesn't see a new array identity (and re-render) on every render.
+  const safePayload = React.useMemo(() => (Array.isArray(payload) ? payload : []), [payload]);
 
   const tooltipLabel = React.useMemo(() => {
     if (hideLabel || safePayload.length === 0) return null;
 
-    const first = safePayload[0] as any;
+    const first = safePayload[0];
     const key = `${labelKey || first?.dataKey || first?.name || "value"}`;
 
     const itemConfig = getPayloadConfigFromPayload(config, first, key);
@@ -161,7 +189,7 @@ function ChartTooltipContent(
     if (labelFormatter) {
       return (
         <div className={cn("font-medium", labelClassName)}>
-          {labelFormatter(computedLabel as any, safePayload as any)}
+          {labelFormatter(computedLabel, safePayload)}
         </div>
       );
     }
@@ -183,7 +211,7 @@ function ChartTooltipContent(
       {!nestLabel ? tooltipLabel : null}
 
       <div className="grid gap-1.5">
-        {safePayload.map((item: any, index: number) => {
+        {safePayload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
@@ -199,7 +227,7 @@ function ChartTooltipContent(
               )}
             >
               {formatter && item?.value !== undefined && item?.name ? (
-                (formatter as any)(item.value, item.name, item, index, item.payload)
+                formatter(item.value, item.name, item, index, item.payload)
               ) : (
                 <>
                   {itemConfig?.icon ? (
@@ -263,21 +291,20 @@ function ChartTooltipContent(
 const ChartLegend = Legend;
 
 function ChartLegendContent(
-  props: React.ComponentProps<typeof Legend> &
+  props: Omit<React.ComponentProps<typeof Legend>, "payload"> &
     React.HTMLAttributes<HTMLDivElement> & {
       hideIcon?: boolean;
       nameKey?: string;
+      payload?: ChartPayloadItem[];
     }
 ) {
-  const { className, hideIcon = false, nameKey, verticalAlign = "bottom" } =
-    props as any;
+  const { className, hideIcon = false, nameKey, verticalAlign = "bottom", payload } =
+    props;
 
   const { config } = useChart();
 
-  // ✅ No payload typing. Normalize safely at runtime.
-  const safePayload = Array.isArray((props as any).payload)
-    ? ((props as any).payload as any[])
-    : [];
+  // Normalized safely at runtime — see ChartTooltipContent above.
+  const safePayload = Array.isArray(payload) ? payload : [];
 
   if (safePayload.length === 0) return null;
 
@@ -289,7 +316,7 @@ function ChartLegendContent(
         className
       )}
     >
-      {safePayload.map((item: any, index: number) => {
+      {safePayload.map((item, index) => {
         const key = `${nameKey || item.dataKey || "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 

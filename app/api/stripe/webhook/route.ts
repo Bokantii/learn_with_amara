@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { stripe } from '../../../../lib/stripe';
 import { prisma } from '../../../../lib/prisma';
 import { resend, EMAIL_FROM } from '../../../../lib/email';
+import { formatMoney } from '../../../../lib/billing/format';
 import PaymentReceiptEmail from '../../../../emails/PaymentReceiptEmail';
 
 export async function POST(request: NextRequest) {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
             subject: 'Your ICLP payment receipt',
             react: PaymentReceiptEmail({
               name: payment.user.name,
-              amountFormatted: `$${(payment.amountCents / 100).toFixed(2)}`,
+              amountFormatted: formatMoney(payment.amountCents, payment.currency),
               date: payment.paidAt?.toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',

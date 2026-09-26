@@ -22,7 +22,7 @@ export default function PaymentReceiptEmail({
       <Body style={main}>
         <Container style={container}>
           <Heading style={heading}>Thanks, {name}!</Heading>
-          <Text style={text}>Your payment was successful. Here's your receipt:</Text>
+          <Text style={text}>Your payment was successful. Here&apos;s your receipt:</Text>
           <Section style={receiptBox}>
             <Row>
               <Column style={label}>Amount</Column>

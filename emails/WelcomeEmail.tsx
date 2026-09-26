@@ -11,13 +11,13 @@ export default function WelcomeEmail({ name, appUrl }: WelcomeEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Welcome to ICLP — let's get started on your French journey</Preview>
+      <Preview>Welcome to ICLP — let&apos;s get started on your French journey</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={heading}>Welcome, {name}!</Heading>
           <Text style={text}>
-            Your ICLP account is ready. Whether you're starting French from scratch or
-            fast-tracking your TCF/TEF/DELF/DALF exam prep, we're glad to have you.
+            Your ICLP account is ready. Whether you&apos;re starting French from scratch or
+            fast-tracking your TCF/TEF/DELF/DALF exam prep, we&apos;re glad to have you.
           </Text>
           <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
             <Button style={button} href={`${appUrl}/dashboard`}>

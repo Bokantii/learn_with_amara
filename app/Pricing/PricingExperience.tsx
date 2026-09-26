@@ -26,8 +26,12 @@ export default function PricingExperience() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
+    // Deferred to an effect rather than a lazy useState initializer: `window`
+    // isn't available during SSR, so this is the standard SSR-safe pattern for
+    // syncing from a client-only store (same rationale as LanguageContext).
     const stored = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
     if (stored && (CURRENCIES as string[]).includes(stored)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrency(stored as Currency);
     }
   }, []);

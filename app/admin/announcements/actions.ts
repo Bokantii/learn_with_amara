@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
 import { sendAnnouncementNotification } from '../../../lib/announcements/notify';
 import { notifySafely } from '../../../lib/notifications/safe';
@@ -51,14 +52,14 @@ export const createAnnouncementAction = adminActionClient
         where: { id: parsedInput.programId! },
         select: { id: true },
       });
-      if (!program) throw new Error('That program could not be found.');
+      if (!program) throw new ActionError('That program could not be found.');
       programId = program.id;
     } else if (parsedInput.scope === 'GROUP') {
       const group = await prisma.group.findUnique({
         where: { id: parsedInput.groupId! },
         select: { id: true },
       });
-      if (!group) throw new Error('That group could not be found.');
+      if (!group) throw new ActionError('That group could not be found.');
       groupId = group.id;
     } else if (parsedInput.scope === 'STUDENT') {
       const student = await prisma.user.findUnique({
@@ -66,7 +67,7 @@ export const createAnnouncementAction = adminActionClient
         select: { id: true, role: true },
       });
       if (!student || student.role !== 'STUDENT') {
-        throw new Error('That student could not be found.');
+        throw new ActionError('That student could not be found.');
       }
       studentId = student.id;
     }
@@ -97,8 +98,8 @@ export const publishAnnouncementAction = adminActionClient
       where: { id: parsedInput.announcementId },
       select: { publishedAt: true, archivedAt: true },
     });
-    if (!existing) throw new Error('That announcement could not be found.');
-    if (existing.archivedAt) throw new Error('An archived announcement cannot be published.');
+    if (!existing) throw new ActionError('That announcement could not be found.');
+    if (existing.archivedAt) throw new ActionError('An archived announcement cannot be published.');
 
     if (!existing.publishedAt) {
       await prisma.announcement.update({
@@ -158,9 +159,9 @@ export const deleteAnnouncementAction = adminActionClient
       where: { id: parsedInput.announcementId },
       select: { publishedAt: true },
     });
-    if (!existing) throw new Error('That announcement could not be found.');
+    if (!existing) throw new ActionError('That announcement could not be found.');
     if (existing.publishedAt) {
-      throw new Error('A published announcement is archived, not deleted.');
+      throw new ActionError('A published announcement is archived, not deleted.');
     }
     await prisma.announcement.delete({ where: { id: parsedInput.announcementId } });
     revalidate();

@@ -101,8 +101,11 @@ export async function finalizeAttempt(
     attempt.responses.map((r) => ({ questionId: r.questionId, awardedPoints: r.awardedPoints }))
   );
 
-  await prisma.assessmentAttempt.update({
-    where: { id: attemptId },
+  // Guarded updateMany: re-asserts AWAITING_REVIEW atomically with the write so a
+  // concurrent finalize (or a submit that reopened the attempt) can't be
+  // silently clobbered.
+  const result = await prisma.assessmentAttempt.updateMany({
+    where: { id: attemptId, status: 'AWAITING_REVIEW' },
     data: {
       status: 'GRADED',
       gradedAt: new Date(),
@@ -110,6 +113,9 @@ export async function finalizeAttempt(
       manualMaxPoints: rollup.manualMaxPoints,
     },
   });
+  if (result.count === 0) {
+    return { ok: false, error: 'ATTEMPT_NOT_AWAITING_REVIEW' };
+  }
 
   return { ok: true };
 }

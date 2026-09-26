@@ -65,7 +65,7 @@ export function Testimonials() {
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  "{copy.quotes[index]}"
+                  &quot;{copy.quotes[index]}&quot;
                 </p>
               </CardContent>
             </Card>

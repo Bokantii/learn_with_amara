@@ -99,7 +99,7 @@ export default function AssignmentsClient({
           <div className="space-y-4">
             {pending.length === 0 && (
               <p className="text-sm text-slate-500 py-8 text-center">
-                Nothing pending — you're all caught up!
+                Nothing pending — you&apos;re all caught up!
               </p>
             )}
             {pending.map((assignment) => {

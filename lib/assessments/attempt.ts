@@ -299,15 +299,18 @@ export async function submitAttempt(input: {
     });
   }
 
-  await prisma.$transaction([
-    ...autoUpdates.map((u) =>
-      prisma.assessmentResponse.update({
+  // A guarded updateMany, not a plain update: if a concurrent submit already
+  // moved this attempt out of IN_PROGRESS between the read above and here, this
+  // affects zero rows instead of silently overwriting the other write.
+  const updatedCount = await prisma.$transaction(async (tx) => {
+    for (const u of autoUpdates) {
+      await tx.assessmentResponse.update({
         where: { id: u.id },
         data: { isCorrect: u.isCorrect, awardedPoints: u.awardedPoints },
-      })
-    ),
-    prisma.assessmentAttempt.update({
-      where: { id: attemptId },
+      });
+    }
+    const result = await tx.assessmentAttempt.updateMany({
+      where: { id: attemptId, status: 'IN_PROGRESS' },
       data: {
         status: nextStatus,
         submittedAt: now,
@@ -320,8 +323,13 @@ export async function submitAttempt(input: {
         recommendedTrack,
         resultSummary,
       },
-    }),
-  ]);
+    });
+    return result.count;
+  });
+
+  if (updatedCount === 0) {
+    return { ok: false, error: 'ATTEMPT_NOT_OPEN' };
+  }
 
   return { ok: true, status: nextStatus };
 }

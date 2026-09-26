@@ -16,8 +16,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('EN');
 
   useEffect(() => {
+    // Deliberately deferred to an effect rather than a lazy useState initializer:
+    // `window` isn't available during SSR, so reading localStorage during the
+    // initial render would either crash server-side or desync the hydrated
+    // markup from the server-rendered HTML. Reading post-mount is the standard
+    // SSR-safe pattern for syncing from a client-only store.
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === 'EN' || stored === 'FR') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguage(stored);
     }
   }, []);

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { put } from '@vercel/blob';
-import { getSessionUser } from '../../../lib/authz';
+import { getSessionUser, hasProgramAccess } from '../../../lib/authz';
 import { prisma } from '../../../lib/prisma';
 
 export async function submitAssignmentAction(formData: FormData) {
@@ -19,6 +19,27 @@ export async function submitAssignmentAction(formData: FormData) {
   }
   if (!(file instanceof File) || file.size === 0) {
     return { error: 'Please choose a file to upload.' };
+  }
+
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { programId: true, groupId: true },
+  });
+  if (!assignment) {
+    return { error: 'This assignment no longer exists.' };
+  }
+
+  const entitled = await hasProgramAccess(user.id, assignment.programId);
+  if (!entitled) {
+    return { error: 'You do not have access to this assignment.' };
+  }
+  if (assignment.groupId) {
+    const membership = await prisma.groupMembership.findFirst({
+      where: { userId: user.id, groupId: assignment.groupId },
+    });
+    if (!membership) {
+      return { error: 'You do not have access to this assignment.' };
+    }
   }
 
   const existing = await prisma.submission.findFirst({

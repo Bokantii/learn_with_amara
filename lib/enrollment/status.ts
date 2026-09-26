@@ -1,4 +1,5 @@
 import type { EnrollmentStatus } from '../generated/prisma/client';
+import { ActionError } from '../action-error';
 
 /**
  * Single source of truth for what each `Enrollment.status` means and which
@@ -51,6 +52,6 @@ export function canTransition(from: EnrollmentStatus, to: EnrollmentStatus): boo
 /** Throws a human-readable error when `from → to` is not allowed. */
 export function assertTransition(from: EnrollmentStatus, to: EnrollmentStatus): void {
   if (!canTransition(from, to)) {
-    throw new Error(`Cannot move an enrollment from ${from} to ${to}.`);
+    throw new ActionError(`Cannot move an enrollment from ${from} to ${to}.`);
   }
 }
