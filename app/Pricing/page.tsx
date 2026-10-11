@@ -3,6 +3,9 @@ import PricingExperience from './PricingExperience';
 import { Card, CardContent } from '../../components/ui/card';
 import { HelpCircle } from 'lucide-react';
 import { PublicShell } from '../../components/PublicShell';
+import { isStripeConfigured } from '../../lib/stripe';
+import { EnrollmentSteps } from '../../components/EnrollmentSteps';
+import { Reveal, RevealGroup, RevealItem } from '../../components/Reveal';
 
 export const metadata: Metadata = {
   title: 'Pricing | International Center for Language Proficiency',
@@ -24,7 +27,11 @@ const faqs = [
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'We accept all major credit cards, PayPal, and bank transfers for annual subscriptions.',
+    answer: 'Tap "Enroll via WhatsApp" on any programme and our admissions team will confirm your place and arrange payment with you directly.',
+  },
+  {
+    question: 'Is it safe to pay through WhatsApp?',
+    answer: 'WhatsApp is only used to arrange your enrollment — we only message from +1 437 291 8783 and +234 813 040 8788, and we never ask for card numbers, passwords or one-time codes in chat. Once your payment is recorded you receive an emailed receipt, and it appears under Billing in your student dashboard.',
   },
   {
     question: 'Can I get a refund?',
@@ -45,7 +52,7 @@ export default function Pricing() {
     <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-4xl lg:text-5xl mb-4">
             Simple, Transparent Tuition
           </h1>
@@ -53,16 +60,27 @@ export default function Pricing() {
             Browse Group French, TEF/TCF exam prep, and Private programmes — choose your currency
             and find the plan that fits your goals.
           </p>
-        </div>
+        </Reveal>
 
-        <PricingExperience />
+        {/* Online checkout only once Stripe is configured; until then enrollment
+            is arranged with admissions over WhatsApp (Launch Gate item 7). */}
+        <PricingExperience enrollVia={isStripeConfigured ? 'checkout' : 'whatsapp'} />
+
+        {!isStripeConfigured && (
+          <Reveal className="mt-12 max-w-6xl mx-auto">
+            <EnrollmentSteps />
+          </Reveal>
+        )}
 
         {/* FAQ Section */}
         <div className="mt-20 max-w-4xl mx-auto">
-          <h2 className="text-3xl text-center mb-12">Frequently Asked Questions</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <Reveal>
+            <h2 className="text-3xl text-center mb-12">Frequently Asked Questions</h2>
+          </Reveal>
+          <RevealGroup className="grid md:grid-cols-2 gap-6" stagger={0.06}>
             {faqs.map((faq, index) => (
-              <Card key={index} className="border-2">
+              <RevealItem key={index} className="grid">
+              <Card className="border-2">
                 <CardContent className="p-6 space-y-3">
                   <div className="flex items-start gap-3">
                     <HelpCircle className="w-5 h-5 text-primary shrink-0 mt-1" />
@@ -75,12 +93,13 @@ export default function Pricing() {
                   </div>
                 </CardContent>
               </Card>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 text-center bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-8 lg:p-12">
+        <Reveal className="mt-16 text-center bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-8 lg:p-12">
           <h2 className="text-3xl lg:text-4xl mb-4">
             Still Have Questions?
           </h2>
@@ -95,7 +114,7 @@ export default function Pricing() {
               Contact Support
             </a>
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
     </PublicShell>

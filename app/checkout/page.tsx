@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '../../lib/authz';
 import { isStripeConfigured } from '../../lib/stripe';
+import { CURRENCIES, findProgrammeById, type Currency } from '../../lib/programmes';
+import { CANADA_WHATSAPP_URL, buildEnrollmentWhatsAppUrl } from '../../lib/whatsapp';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
+import { OfficialPaymentAccounts } from '../../components/EnrollmentSteps';
 import { Button } from '../../components/ui/button';
 import CheckoutClient from './CheckoutClient';
 
@@ -23,6 +26,14 @@ export default async function CheckoutPage({
   // that honestly instead of a payment form that would fail at the Stripe API
   // call.
   if (!isStripeConfigured) {
+    const programme = planId ? findProgrammeById(planId) : undefined;
+    const selectedCurrency: Currency = (CURRENCIES as string[]).includes(currency ?? '')
+      ? (currency as Currency)
+      : 'CAD';
+    const whatsappUrl = programme
+      ? buildEnrollmentWhatsAppUrl(programme, selectedCurrency)
+      : CANADA_WHATSAPP_URL;
+
     return (
       <div className="py-12 lg:py-20">
         <div className="container mx-auto px-4 lg:px-8">
@@ -33,17 +44,29 @@ export default async function CheckoutPage({
               </CardHeader>
               <CardContent className="p-6 pt-0 space-y-6 text-center">
                 <p className="text-muted-foreground">
-                  Online payment isn&apos;t available yet. Contact us and our admissions team
-                  will set up your enrollment and payment directly.
+                  Online payment isn&apos;t available yet. Message us on WhatsApp and our
+                  admissions team will set up your enrollment and payment directly.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button asChild variant="outline">
                     <Link href="/Pricing">Back to Pricing</Link>
                   </Button>
                   <Button asChild>
-                    <a href="mailto:centerforlanguageproficiency@gmail.com">Email us to enroll</a>
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      Message us on WhatsApp
+                    </a>
                   </Button>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Prefer email?{' '}
+                  <a
+                    href="mailto:centerforlanguageproficiency@gmail.com"
+                    className="text-primary hover:underline"
+                  >
+                    centerforlanguageproficiency@gmail.com
+                  </a>
+                </p>
+                <OfficialPaymentAccounts compact />
               </CardContent>
             </Card>
           </div>

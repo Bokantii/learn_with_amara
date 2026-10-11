@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
 import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
+import { notifySafely } from '../../../lib/notifications/safe';
+import { sendPaymentRecordedNotification } from '../../../lib/notifications/events';
 
 /**
  * Admin payment recording (SPEC §11.12, Phase 2 Task 9). Manual records are the
@@ -82,6 +84,14 @@ export const recordPaymentAction = adminActionClient
     revalidatePath('/admin/payments');
     revalidatePath('/admin/students');
     revalidatePath('/dashboard/billing');
+
+    // Email + in-app receipt, so a student who paid over WhatsApp/transfer gets
+    // written proof from ICLP. Never rolls back the recorded payment.
+    await notifySafely(() => sendPaymentRecordedNotification(payment.id), {
+      event: 'payment-recorded',
+      paymentId: payment.id,
+    });
+
     return { paymentId: payment.id };
   });
 

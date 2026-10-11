@@ -1,12 +1,20 @@
 import {
-  Body, Container, Head, Heading, Html, Preview, Section, Text, Row, Column, Hr,
+  Body, Button, Container, Head, Heading, Html, Preview, Section, Text, Row, Column, Hr,
 } from '@react-email/components';
+import { button } from './_styles';
 
 interface PaymentReceiptEmailProps {
   name: string;
   amountFormatted: string;
   date: string;
   receiptId: string;
+  /** Manual payments: how it was paid, e.g. "Interac e-Transfer". */
+  method?: string | null;
+  /** Manual payments: the bank / transfer reference the student can match. */
+  reference?: string | null;
+  programName?: string | null;
+  /** When set, links the student to their billing history. */
+  appUrl?: string;
 }
 
 export default function PaymentReceiptEmail({
@@ -14,6 +22,10 @@ export default function PaymentReceiptEmail({
   amountFormatted,
   date,
   receiptId,
+  method,
+  reference,
+  programName,
+  appUrl,
 }: PaymentReceiptEmailProps) {
   return (
     <Html>
@@ -22,12 +34,39 @@ export default function PaymentReceiptEmail({
       <Body style={main}>
         <Container style={container}>
           <Heading style={heading}>Thanks, {name}!</Heading>
-          <Text style={text}>Your payment was successful. Here&apos;s your receipt:</Text>
+          <Text style={text}>We&apos;ve received your payment. Here&apos;s your receipt:</Text>
           <Section style={receiptBox}>
             <Row>
               <Column style={label}>Amount</Column>
               <Column style={value}>{amountFormatted}</Column>
             </Row>
+            {programName && (
+              <>
+                <Hr style={hr} />
+                <Row>
+                  <Column style={label}>Programme</Column>
+                  <Column style={value}>{programName}</Column>
+                </Row>
+              </>
+            )}
+            {method && (
+              <>
+                <Hr style={hr} />
+                <Row>
+                  <Column style={label}>Method</Column>
+                  <Column style={value}>{method}</Column>
+                </Row>
+              </>
+            )}
+            {reference && (
+              <>
+                <Hr style={hr} />
+                <Row>
+                  <Column style={label}>Reference</Column>
+                  <Column style={value}>{reference}</Column>
+                </Row>
+              </>
+            )}
             <Hr style={hr} />
             <Row>
               <Column style={label}>Date</Column>
@@ -39,6 +78,11 @@ export default function PaymentReceiptEmail({
               <Column style={value}>{receiptId}</Column>
             </Row>
           </Section>
+          {appUrl && (
+            <Button style={button} href={`${appUrl}/dashboard/billing`}>
+              View billing history
+            </Button>
+          )}
           <Text style={footer}>— The ICLP Team</Text>
         </Container>
       </Body>

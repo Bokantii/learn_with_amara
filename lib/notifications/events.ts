@@ -7,6 +7,8 @@ import AssignmentPublishedEmail from '../../emails/AssignmentPublishedEmail';
 import EnrollmentChangedEmail from '../../emails/EnrollmentChangedEmail';
 import AssessmentGradedEmail from '../../emails/AssessmentGradedEmail';
 import LessonPublishedEmail from '../../emails/LessonPublishedEmail';
+import PaymentReceiptEmail from '../../emails/PaymentReceiptEmail';
+import { formatMoney } from '../billing/format';
 
 /**
  * Thin per-event callers of `dispatchNotification` (SPEC §12). Each re-reads the
@@ -253,5 +255,66 @@ export async function sendLessonPublishedNotification(lessonId: string) {
         }),
       },
     })),
+  });
+}
+
+// ─── Manual payment recorded ────────────────────────────────────────────
+/**
+ * Receipt for a payment an admin recorded by hand (WhatsApp / bank transfer /
+ * Interac enrollment). Stripe payments get their receipt from the webhook.
+ * Only a PAID payment produces a receipt.
+ */
+export async function sendPaymentRecordedNotification(paymentId: string) {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: {
+      id: true,
+      amountCents: true,
+      currency: true,
+      status: true,
+      method: true,
+      reference: true,
+      paidAt: true,
+      user: { select: { id: true, name: true, email: true } },
+      program: { select: { name: true } },
+    },
+  });
+  if (!payment || payment.status !== 'PAID') return null;
+
+  const appUrl = await originForEmails();
+  const amount = formatMoney(payment.amountCents, payment.currency);
+  const programName = payment.program?.name ?? null;
+  const title = `Payment received: ${amount}`;
+  const message = programName
+    ? `We've recorded your payment of ${amount} for ${programName}.`
+    : `We've recorded your payment of ${amount}.`;
+
+  return dispatchNotification({
+    type: 'PAYMENT_RECORDED',
+    relatedEntityType: 'Payment',
+    relatedEntityId: payment.id,
+    channels: [...IN_APP_EMAIL],
+    recipients: [
+      {
+        user: payment.user,
+        // One receipt per payment row; a refund is a status change, not a new receipt.
+        dedupeKey: `PAYMENT_RECORDED:${payment.id}`,
+        title,
+        message,
+        emailMessage: {
+          subject: 'Your ICLP payment receipt',
+          react: PaymentReceiptEmail({
+            name: payment.user.name,
+            amountFormatted: amount,
+            date: payment.paidAt ? fmtDate(payment.paidAt) : '',
+            receiptId: payment.id,
+            method: payment.method,
+            reference: payment.reference,
+            programName,
+            appUrl,
+          }),
+        },
+      },
+    ],
   });
 }

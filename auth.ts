@@ -21,8 +21,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
   },
   providers: [
-    Google,
-    Facebook,
+    // OAuth providers are registered only when their keys are configured, so a
+    // missing key hides the button (components/SocialSignInButtons) instead of
+    // showing one that fails.
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google] : []),
+    ...(process.env.AUTH_FACEBOOK_ID && process.env.AUTH_FACEBOOK_SECRET ? [Facebook] : []),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },

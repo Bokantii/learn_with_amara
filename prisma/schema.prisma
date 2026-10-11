@@ -430,6 +430,7 @@ enum NotificationType {
   ENROLLMENT_CHANGED
   ASSESSMENT_GRADED
   LESSON_PUBLISHED
+  PAYMENT_RECORDED
 }
 
 enum AnnouncementScope {

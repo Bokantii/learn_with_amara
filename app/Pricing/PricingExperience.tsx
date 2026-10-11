@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import CurrencySelector from "./CurrencySelector";
 import ProgrammeCard from "../../components/ProgrammeCard";
 import BenefitsList from "./BenefitsList";
+import { RevealGroup, RevealItem } from "../../components/Reveal";
 import {
   CURRENCIES,
   PROGRAMME_CATEGORIES,
@@ -15,11 +16,14 @@ import {
   type Currency,
   type Programme,
 } from "../../lib/programmes";
+import { buildEnrollmentWhatsAppUrl } from "../../lib/whatsapp";
 
 const CURRENCY_STORAGE_KEY = "iclp-pricing-currency";
 const DEFAULT_CURRENCY: Currency = "CAD";
 
-export default function PricingExperience() {
+export type EnrollVia = "checkout" | "whatsapp";
+
+export default function PricingExperience({ enrollVia }: { enrollVia: EnrollVia }) {
   const router = useRouter();
   const [currency, setCurrency] = useState<Currency>(DEFAULT_CURRENCY);
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null);
@@ -78,22 +82,27 @@ export default function PricingExperience() {
               <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8">
                 {category.description}
               </p>
-              <div
+              <RevealGroup
                 className={`grid gap-6 lg:gap-8 max-w-6xl mx-auto ${
                   programmes.length >= 3 ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2"
                 }`}
               >
                 {programmes.map((programme) => (
+                  <RevealItem key={programme.id} className="grid">
                   <ProgrammeCard
-                    key={programme.id}
                     programme={programme}
                     currency={currency}
                     isSelected={selectedProgrammeId === programme.id}
                     isNavigating={isNavigating && selectedProgrammeId === programme.id}
                     onSelect={handleSelect}
+                    {...(enrollVia === "whatsapp" && {
+                      ctaLabel: "Enroll via WhatsApp",
+                      ctaHref: buildEnrollmentWhatsAppUrl(programme, currency),
+                    })}
                   />
+                  </RevealItem>
                 ))}
-              </div>
+              </RevealGroup>
               <div className="max-w-6xl mx-auto">
                 <BenefitsList title={includesTitle} items={includes} />
               </div>

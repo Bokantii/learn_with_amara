@@ -8,6 +8,7 @@ const submissionFindUnique = vi.fn();
 const enrollmentFindUnique = vi.fn();
 const attemptFindUnique = vi.fn();
 const lessonFindUnique = vi.fn();
+const paymentFindUnique = vi.fn();
 const userFindMany = vi.fn();
 
 vi.mock('./dispatch', () => ({
@@ -24,6 +25,7 @@ vi.mock('../prisma', () => ({
     enrollment: { findUnique: (...a: unknown[]) => enrollmentFindUnique(...a) },
     assessmentAttempt: { findUnique: (...a: unknown[]) => attemptFindUnique(...a) },
     lesson: { findUnique: (...a: unknown[]) => lessonFindUnique(...a) },
+    payment: { findUnique: (...a: unknown[]) => paymentFindUnique(...a) },
     user: { findMany: (...a: unknown[]) => userFindMany(...a) },
   },
 }));
@@ -34,6 +36,7 @@ import {
   sendEnrollmentChangedNotification,
   sendAssessmentGradedNotification,
   sendLessonPublishedNotification,
+  sendPaymentRecordedNotification,
 } from './events';
 
 const STUDENT = { id: 'u1', name: 'Aisha', email: 'aisha@example.com' };
@@ -172,6 +175,42 @@ describe('sendLessonPublishedNotification', () => {
       module: { title: 'Grammar', program: { id: 'p1', name: 'TCF' } },
     });
     expect(await sendLessonPublishedNotification('l1')).toBeNull();
+    expect(dispatchNotification).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendPaymentRecordedNotification', () => {
+  const paid = {
+    id: 'pay1',
+    amountCents: 6000,
+    currency: 'cad',
+    status: 'PAID',
+    method: 'Interac e-Transfer',
+    reference: 'CA123',
+    paidAt: new Date('2026-10-01T12:00:00Z'),
+    user: STUDENT,
+    program: { name: 'French Enthusiast Premier' },
+  };
+
+  it('sends one in-app + email receipt to the paying student', async () => {
+    paymentFindUnique.mockResolvedValue(paid);
+    await sendPaymentRecordedNotification('pay1');
+    const d = lastDispatch();
+    expect(d.type).toBe('PAYMENT_RECORDED');
+    expect(d.relatedEntityType).toBe('Payment');
+    expect(d.channels).toEqual(['IN_APP', 'EMAIL']);
+    expect(d.recipients).toHaveLength(1);
+    expect(d.recipients[0].user).toEqual(STUDENT);
+    expect(d.recipients[0].dedupeKey).toBe('PAYMENT_RECORDED:pay1');
+    expect(d.recipients[0].message).toContain('French Enthusiast Premier');
+    expect(d.recipients[0].emailMessage.subject).toBe('Your ICLP payment receipt');
+  });
+
+  it('does nothing for a missing or non-PAID payment', async () => {
+    paymentFindUnique.mockResolvedValue(null);
+    expect(await sendPaymentRecordedNotification('nope')).toBeNull();
+    paymentFindUnique.mockResolvedValue({ ...paid, status: 'REFUNDED' });
+    expect(await sendPaymentRecordedNotification('pay1')).toBeNull();
     expect(dispatchNotification).not.toHaveBeenCalled();
   });
 });

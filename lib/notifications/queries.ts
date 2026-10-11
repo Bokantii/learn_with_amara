@@ -24,6 +24,8 @@ export function notificationHref(type: NotificationType): string | null {
       return '/assessments/history';
     case 'LESSON_PUBLISHED':
       return '/dashboard/recordedlessons';
+    case 'PAYMENT_RECORDED':
+      return '/dashboard/billing';
     default:
       return null; // CLASS_* → the bell's linkHref
   }

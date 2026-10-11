@@ -18,7 +18,8 @@ export type NotificationTypeValue =
   | 'ASSIGNMENT_GRADED'
   | 'ENROLLMENT_CHANGED'
   | 'ASSESSMENT_GRADED'
-  | 'LESSON_PUBLISHED';
+  | 'LESSON_PUBLISHED'
+  | 'PAYMENT_RECORDED';
 
 export type NotificationChannelValue = 'EMAIL' | 'IN_APP';
 
