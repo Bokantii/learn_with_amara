@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Card, CardContent } from './../../components/ui/card';
 import { Button } from './../../components/ui/button';
+import { Reveal, RevealGroup, RevealItem } from './../../components/Reveal';
 import { CheckCircle, BookOpen, Headphones, FileText, Video, Target, GraduationCap, Rocket } from 'lucide-react';
 import { PublicShell } from './../../components/PublicShell';
 
@@ -75,7 +76,7 @@ export default function TCFTEFPrep() {
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         {/* Hero Section */}
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h1 className="text-4xl lg:text-5xl mb-4">
             French Exam Preparation
           </h1>
@@ -86,17 +87,20 @@ export default function TCFTEFPrep() {
           <Button size="lg" className="bg-accent hover:bg-accent/90" asChild>
             <Link href="/Pricing">Start Your Preparation</Link>
           </Button>
-        </div>
+        </Reveal>
 
         {/* Choose Your Path */}
         <div className="mb-16">
-          <h2 className="text-3xl text-center mb-4">Choose Your Path</h2>
-          <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-            Whichever path you&apos;re on, you&apos;ll practice with the same real exam materials below.
-          </p>
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <Reveal>
+            <h2 className="text-3xl text-center mb-4">Choose Your Path</h2>
+            <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12">
+              Whichever path you&apos;re on, you&apos;ll practice with the same real exam materials below.
+            </p>
+          </Reveal>
+          <RevealGroup className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {paths.map((path, index) => (
-              <Card key={index} className="border-2 hover:border-primary transition-colors">
+              <RevealItem key={index} className="grid">
+              <Card className="border-2 hover:border-primary transition-colors">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                     <path.icon className="w-6 h-6 text-primary" />
@@ -110,16 +114,20 @@ export default function TCFTEFPrep() {
                   </Button>
                 </CardContent>
               </Card>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
 
         {/* What's Included */}
         <div className="mb-16">
-          <h2 className="text-3xl text-center mb-12">What&apos;s Included</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Reveal>
+            <h2 className="text-3xl text-center mb-12">What&apos;s Included</h2>
+          </Reveal>
+          <RevealGroup className="grid md:grid-cols-2 lg:grid-cols-4 gap-6" stagger={0.08}>
             {examFeatures.map((feature, index) => (
-              <Card key={index} className="border-2 hover:border-primary transition-colors">
+              <RevealItem key={index} className="grid">
+              <Card className="border-2 hover:border-primary transition-colors">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                     <feature.icon className="w-6 h-6 text-primary" />
@@ -130,14 +138,15 @@ export default function TCFTEFPrep() {
                   </p>
                 </CardContent>
               </Card>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
 
         {/* Mock Exams Section */}
-        <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-2xl p-8 lg:p-12">
+        <Reveal className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-2xl p-8 lg:p-12">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
+            <Reveal direction="left" delay={0.15} className="space-y-6">
               <h2 className="text-3xl lg:text-4xl">
                 Practice with Mock Exams
               </h2>
@@ -161,8 +170,8 @@ export default function TCFTEFPrep() {
                   A short diagnostic that estimates your CEFR level and recommends where to start.
                 </p>
               </div>
-            </div>
-            <div className="bg-white rounded-xl p-8 shadow-xl">
+            </Reveal>
+            <Reveal direction="right" delay={0.25} className="bg-white rounded-xl p-8 shadow-xl">
               <h3 className="text-2xl mb-6">TCF/TEF Scoring Guide</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
@@ -186,17 +195,17 @@ export default function TCFTEFPrep() {
                   <span className="font-medium">200-299</span>
                 </div>
               </div>
-            </div>
+            </Reveal>
           </div>
-          <div className="mt-8 bg-white rounded-xl p-6 lg:p-8 shadow-xl">
+          <Reveal className="mt-8 bg-white rounded-xl p-6 lg:p-8 shadow-xl">
             <h3 className="text-xl mb-2">Prefer DELF/DALF instead?</h3>
             <p className="text-muted-foreground">
               DELF and DALF work differently: each level — A1, A2, B1, B2 (DELF) or C1, C2 (DALF)
               — is its own diploma. Pass one, and it&apos;s yours for life, with no expiry and no need
               to retake other levels.
             </p>
-          </div>
-        </div>
+          </Reveal>
+        </Reveal>
       </div>
     </div>
     </PublicShell>

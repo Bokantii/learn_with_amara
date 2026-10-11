@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { PublicShell } from '../../components/PublicShell';
+import { Reveal, RevealGroup, RevealItem } from '../../components/Reveal';
 import { blogPosts } from '../../lib/content/blog';
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function Blog() {
     <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h1 className="text-4xl lg:text-5xl mb-4">
             French & Canadian PR Blog
           </h1>
@@ -25,11 +26,12 @@ export default function Blog() {
             Tips, strategies, and insights to help you reach the French level — and TCF/TEF score —
             your Canadian immigration goals need.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <RevealGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {blogPosts.map((post) => (
-            <Link key={post.slug} href={`/Blog/${post.slug}`} className="block h-full">
+            <RevealItem key={post.slug} className="grid">
+            <Link href={`/Blog/${post.slug}`} className="block h-full">
               <Card
                 className="border-2 hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer group h-full"
               >
@@ -68,8 +70,9 @@ export default function Blog() {
                 </CardContent>
               </Card>
             </Link>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </div>
     </PublicShell>

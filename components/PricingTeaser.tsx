@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import ProgrammeCard from './ProgrammeCard';
 import { Button } from './ui/button';
+import { Reveal, RevealGroup, RevealItem } from './Reveal';
 import { findProgrammeById, type Programme } from '../lib/programmes';
 
 // A "starting from" highlight per category — kept in sync with lib/programmes.ts,
@@ -24,17 +25,17 @@ export function PricingTeaser() {
   return (
     <section className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h2 className="text-3xl lg:text-4xl mb-4">Simple, Transparent Tuition</h2>
           <p className="text-lg text-muted-foreground">
             Group French, TEF/TCF exam prep, and Private classes — priced in CAD, NGN, USD, or GBP.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+        <RevealGroup className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
           {highlights.map((programme) => (
+            <RevealItem key={programme.id} className="grid">
             <ProgrammeCard
-              key={programme.id}
               programme={programme}
               currency={TEASER_CURRENCY}
               isSelected={false}
@@ -45,10 +46,11 @@ export function PricingTeaser() {
               }
               onSelect={() => router.push('/Pricing')}
             />
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
 
-        <div className="text-center mt-10">
+        <Reveal className="text-center mt-10">
           <Button
             variant="outline"
             size="lg"
@@ -57,7 +59,7 @@ export function PricingTeaser() {
           >
             View Full Pricing &amp; Currencies
           </Button>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

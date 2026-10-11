@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from './ui/card';
+import { Reveal, RevealGroup, RevealItem } from './Reveal';
 import { Star } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useLanguage } from '../lib/i18n/LanguageContext';
@@ -31,18 +32,19 @@ export function Testimonials() {
   return (
     <section className="py-12 lg:py-20 bg-slate-50">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h2 className="text-3xl lg:text-4xl mb-4">
             {copy.heading}
           </h2>
           <p className="text-lg text-muted-foreground">
             {copy.subheading}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <RevealGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="border-2 hover:shadow-lg transition-shadow">
+            <RevealItem key={index} className="grid">
+            <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardContent className="p-6 lg:p-8 space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-muted">
@@ -69,8 +71,9 @@ export function Testimonials() {
                 </p>
               </CardContent>
             </Card>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

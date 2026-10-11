@@ -1,17 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { animate, useMotionValue, useMotionValueEvent, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  animate,
+  useInView,
+  useMotionValue,
+  useMotionValueEvent,
+  useReducedMotion,
+} from 'motion/react';
 
 interface CountUpProps {
   end: number;
   duration?: number;
   suffix?: string;
   className?: string;
+  /** Wait until the number scrolls into view before counting. */
+  startOnView?: boolean;
 }
 
-export function CountUp({ end, duration = 1.8, suffix = '', className }: CountUpProps) {
+export function CountUp({
+  end,
+  duration = 1.8,
+  suffix = '',
+  className,
+  startOnView = false,
+}: CountUpProps) {
   const shouldReduceMotion = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const shouldStart = !startOnView || isInView;
   const motionValue = useMotionValue(0);
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -24,6 +41,7 @@ export function CountUp({ end, duration = 1.8, suffix = '', className }: CountUp
       motionValue.set(end);
       return;
     }
+    if (!shouldStart) return;
 
     const controls = animate(motionValue, end, {
       duration,
@@ -32,10 +50,10 @@ export function CountUp({ end, duration = 1.8, suffix = '', className }: CountUp
 
     return controls.stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [end, duration, shouldReduceMotion]);
+  }, [end, duration, shouldReduceMotion, shouldStart]);
 
   return (
-    <span className={className}>
+    <span ref={ref} className={className}>
       {displayValue}
       {suffix}
     </span>
