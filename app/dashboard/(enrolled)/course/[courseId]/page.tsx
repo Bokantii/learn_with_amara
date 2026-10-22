@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser, hasProgramAccess } from "../../../../lib/authz";
-import { prisma } from "../../../../lib/prisma";
-import { Card } from "../../../../components/ui/card";
-import { Button } from "../../../../components/ui/button";
+import { getSessionUser, hasProgramAccess } from "../../../../../lib/authz";
+import { prisma } from "../../../../../lib/prisma";
+import { Card } from "../../../../../components/ui/card";
+import { Button } from "../../../../../components/ui/button";
 import { PlayCircle, CheckCircle2, FolderOpen, Clock } from "lucide-react";
 
 export default async function CoursePage({

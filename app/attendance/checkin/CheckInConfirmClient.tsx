@@ -22,7 +22,7 @@ type Outcome =
 const REASON_MESSAGE: Record<string, string> = {
   INVALID_OR_EXPIRED: 'This attendance link is invalid or has expired.',
   CLASS_NOT_ELIGIBLE: 'This class is not currently accepting check-ins.',
-  NOT_ENTITLED: 'You are not enrolled in this class.',
+  NOT_ENTITLED: "You don't have an active enrollment for this class. Contact ICLP if you think this is a mistake.",
   RATE_LIMITED: 'Too many attempts. Please wait a minute and try again.',
 };
 

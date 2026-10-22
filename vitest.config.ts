@@ -6,7 +6,8 @@ import { defineConfig } from 'vitest/config';
 // database or the network. Playwright (`e2e/`) remains the integration layer.
 export default defineConfig({
   test: {
-    include: ['lib/**/*.test.ts'],
+    // app/**: server-action authorization tests colocated with the action.
+    include: ['lib/**/*.test.ts', 'app/**/*.test.ts'],
     environment: 'node',
   },
 });

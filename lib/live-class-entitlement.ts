@@ -51,10 +51,10 @@ export async function entitledUserIdsForLiveClass(
 
 /**
  * Is `userId` currently entitled to `liveClass`? Thin boolean wrapper around
- * `entitledUserIdsForLiveClass` for one-user checks (e.g. QR attendance
- * check-in) — defaults to VISIBLE_ENROLLMENT_STATUSES (what the student can
- * see/act on), not NOTIFY_ENROLLMENT_STATUSES (who gets pushed reminders) —
- * a PENDING/PAUSED student can still check in to a class they can see.
+ * `entitledUserIdsForLiveClass` for one-user checks — defaults to
+ * VISIBLE_ENROLLMENT_STATUSES (what the student can see). Callers with a
+ * narrower rule pass their own set: QR self check-in passes
+ * ATTENDANCE_CHECKIN_ENROLLMENT_STATUSES (ACTIVE only, #25).
  */
 export async function isUserEntitledToLiveClass(
   userId: string,

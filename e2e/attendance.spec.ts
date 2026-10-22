@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 /**
  * QR attendance (Phase 2 Task 6). Covers: session start/QR, entitled check-in
  * (PRESENT/LATE), the unauthenticated-scan sign-in round trip, duplicate/replay
- * protection, wrong-program and group-scope rejection, session close, token
+ * protection, wrong-program, PENDING-enrollment and group-scope rejection, session close, token
  * regeneration, cancelled-class rejection, computed ABSENT, manual override,
  * cross-student isolation, non-staff lockout, the mobile API contract, and
  * INSTRUCTOR access.
@@ -12,8 +12,11 @@ import { test, expect, type Page } from '@playwright/test';
  * can be relative to "now". Requires the seeded users (see prisma/seed.ts):
  * admin@iclp.com, instructor@iclp.com, aisha.bello@example.com (tcf + morning
  * cohort), noah.park@example.com (tcf, not in the cohort), marcus.chen@example.com
- * (tef only).
+ * (tef only), pending.pay@example.com (tcf, PENDING).
  */
+
+const NOT_ENTITLED_MESSAGE =
+  "You don't have an active enrollment for this class. Contact ICLP if you think this is a mistake.";
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/SignIn');
@@ -182,7 +185,26 @@ test.describe('QR attendance — staff session + student check-in', () => {
     await signIn(studentPage, 'marcus.chen@example.com', 'student1234'); // TEF, not TCF
     await studentPage.goto(checkInPath);
     await studentPage.getByRole('button', { name: 'Confirm Check-In' }).click();
-    await expect(studentPage.getByText('You are not enrolled in this class.')).toBeVisible();
+    await expect(studentPage.getByText(NOT_ENTITLED_MESSAGE)).toBeVisible();
+
+    await admin.close();
+    await studentCtx.close();
+  });
+
+  test('a student whose enrollment in the class program is still PENDING cannot check in', async ({ browser }) => {
+    const admin = await browser.newContext();
+    const adminPage = await admin.newPage();
+    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
+    await openManage(adminPage, title);
+    const checkInPath = await startAndGetCheckInPath(adminPage);
+
+    const studentCtx = await browser.newContext();
+    const studentPage = await studentCtx.newPage();
+    await signIn(studentPage, 'pending.pay@example.com', 'student1234'); // TCF, PENDING
+    await studentPage.goto(checkInPath);
+    await studentPage.getByRole('button', { name: 'Confirm Check-In' }).click();
+    await expect(studentPage.getByText(NOT_ENTITLED_MESSAGE)).toBeVisible();
 
     await admin.close();
     await studentCtx.close();
@@ -208,7 +230,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
     await signIn(nonMemberPage, 'noah.park@example.com', 'student1234'); // TCF but not the cohort
     await nonMemberPage.goto(checkInPath);
     await nonMemberPage.getByRole('button', { name: 'Confirm Check-In' }).click();
-    await expect(nonMemberPage.getByText('You are not enrolled in this class.')).toBeVisible();
+    await expect(nonMemberPage.getByText(NOT_ENTITLED_MESSAGE)).toBeVisible();
 
     await admin.close();
     await member.close();

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { put } from '@vercel/blob';
-import { getSessionUser, hasProgramAccess } from '../../../lib/authz';
-import { prisma } from '../../../lib/prisma';
+import { getSessionUser, hasProgramAccess } from '../../../../lib/authz';
+import { prisma } from '../../../../lib/prisma';
 
 export async function submitAssignmentAction(formData: FormData) {
   const user = await getSessionUser();

@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionUser } from "../../lib/authz";
-import { prisma } from "../../lib/prisma";
-import { getStudentResults } from "../../lib/results/queries";
-import { getRecentStudentAnnouncements } from "../../lib/announcements/queries";
-import { cefrLabel } from "../../lib/assessments/placement";
-import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../lib/enrollment/status";
-import { VISIBLE_ENROLLMENT_STATUSES } from "../../lib/live-class-entitlement";
-import { DEFAULT_MEETING_URL } from "../../lib/liveclass";
-import { Card } from "./../../components/ui/card";
-import { Progress } from "./../../components/ui/progress";
-import { Button } from "./../../components/ui/button";
-import { Badge } from "./../../components/ui/badge";
+import { getSessionUser } from "../../../lib/authz";
+import { prisma } from "../../../lib/prisma";
+import { getStudentResults } from "../../../lib/results/queries";
+import { getRecentStudentAnnouncements } from "../../../lib/announcements/queries";
+import { cefrLabel } from "../../../lib/assessments/placement";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
+import { VISIBLE_ENROLLMENT_STATUSES } from "../../../lib/live-class-entitlement";
+import { DEFAULT_MEETING_URL } from "../../../lib/liveclass";
+import { Card } from "../../../components/ui/card";
+import { Progress } from "../../../components/ui/progress";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 import {
   Video, PlayCircle, Calendar, Clock, BookOpen,
   CheckCircle2, AlertCircle, Trophy, Target, UsersRound,

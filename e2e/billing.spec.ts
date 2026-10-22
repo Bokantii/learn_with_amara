@@ -12,6 +12,7 @@ import { test, expect, type Page } from '@playwright/test';
  *   noah.park@example.com     — ACTIVE (TCF), NO payment  → empty-state fixture
  *   pending.pay@example.com   — PENDING (TCF), no payment  → lifecycle fixture
  *   david.kim@example.com     — PAUSED (Business Spanish)  → access fixture
+ *   cancelled.only@example.com — CANCELLED (TEF) only, 1 manual payment (ref ICLP-2026-0188)
  */
 
 async function signIn(page: Page, email: string, password: string) {
@@ -50,6 +51,48 @@ test.describe('student billing', () => {
     for (const fake of ['$199', '4242', 'Next billing', 'Add Payment Method']) {
       await expect(page.getByText(fake, { exact: false })).toHaveCount(0);
     }
+  });
+
+  test('a CANCELLED-only student keeps read-only access to their own billing history', async ({ page }) => {
+    await signIn(page, 'cancelled.only@example.com', 'student1234');
+    await page.goto('/dashboard/billing');
+
+    await expect(page.getByRole('heading', { name: 'Billing' })).toBeVisible();
+    await expect(page.getByText("You're not enrolled in a program yet")).toHaveCount(0);
+    const table = page.getByRole('table');
+    await expect(table.getByText('$250.00 CAD').first()).toBeVisible();
+    await expect(page.getByText('ICLP-2026-0188')).toBeVisible();
+    await expect(
+      page.locator('[data-slot="card"]', { hasText: 'TEF Canada Preparation' }).getByText('cancelled')
+    ).toBeVisible();
+
+    // Read-only: no payment initiation / editing controls on the page.
+    await expect(page.getByRole('button', { name: /pay|refund|edit/i })).toHaveCount(0);
+    // Never another student's records.
+    await expect(page.getByText('ICLP-2026-0142')).toHaveCount(0);
+    await expect(page.getByText('ICLP-2026-0173')).toHaveCount(0);
+  });
+
+  test('a CANCELLED-only student still gets no learning pages', async ({ page }) => {
+    await signIn(page, 'cancelled.only@example.com', 'student1234');
+    for (const path of [
+      '/dashboard',
+      '/dashboard/myprograms',
+      '/dashboard/liveclasses',
+      '/dashboard/recordedlessons',
+      '/dashboard/assignments',
+      '/dashboard/results',
+    ]) {
+      await page.goto(path);
+      await expect(page.getByText("You're not enrolled in a program yet")).toBeVisible();
+    }
+  });
+
+  test('an active student cannot see a cancelled student’s billing history', async ({ page }) => {
+    await signIn(page, 'aisha.bello@example.com', 'student1234');
+    await page.goto('/dashboard/billing');
+    await expect(page.getByText('ICLP-2026-0142')).toBeVisible();
+    await expect(page.getByText('ICLP-2026-0188')).toHaveCount(0);
   });
 
   test('anonymous visitors cannot reach billing', async ({ page }) => {

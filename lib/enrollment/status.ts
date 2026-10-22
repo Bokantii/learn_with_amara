@@ -27,6 +27,14 @@ export const CONTENT_ACCESS_ENROLLMENT_STATUSES: EnrollmentStatus[] = ['ACTIVE',
 export const NOTIFY_ENROLLMENT_STATUSES: EnrollmentStatus[] = ['ACTIVE', 'COMPLETED'];
 
 /**
+ * May record their own QR attendance check-in. ACTIVE only (V1 product
+ * decision 2026-10-21, SPEC Known Deferred Issue #25): a PENDING (not yet
+ * activated / unpaid), PAUSED, COMPLETED or CANCELLED enrollment can never
+ * self-check-in, even when the class is visible to the student.
+ */
+export const ATTENDANCE_CHECKIN_ENROLLMENT_STATUSES: EnrollmentStatus[] = ['ACTIVE'];
+
+/**
  * Legal next states for each status. Enrollment activation is **admin-approved**
  * (Task 9 decision B): a new enrollment starts `PENDING` and an admin moves it
  * to `ACTIVE` explicitly — a recorded payment never does it automatically.

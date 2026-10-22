@@ -185,6 +185,20 @@ describe('checkInToAttendanceSession', () => {
     expect(recordCreate).not.toHaveBeenCalled();
   });
 
+  it('checks entitlement against ACTIVE enrollments only (#25)', async () => {
+    sessionFindUnique.mockResolvedValue(baseSession());
+    liveClassFindUnique.mockResolvedValue(baseLiveClass());
+    recordCreate.mockResolvedValue({});
+
+    await checkInToAttendanceSession({ rawToken: RAW_TOKEN, studentUserId: STUDENT_ID });
+
+    expect(isUserEntitledToLiveClass).toHaveBeenCalledWith(
+      STUDENT_ID,
+      expect.objectContaining({ id: LIVE_CLASS_ID }),
+      ['ACTIVE']
+    );
+  });
+
   it('duplicate check-in (simulated P2002) returns ALREADY_CHECKED_IN with the existing status', async () => {
     sessionFindUnique.mockResolvedValue(baseSession());
     liveClassFindUnique.mockResolvedValue(baseLiveClass());

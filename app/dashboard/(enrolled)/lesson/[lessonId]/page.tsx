@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser, getEntitledPublishedLesson } from "../../../../lib/authz";
-import { prisma } from "../../../../lib/prisma";
+import { getSessionUser, getEntitledPublishedLesson } from "../../../../../lib/authz";
+import { prisma } from "../../../../../lib/prisma";
 import LessonClient from "./LessonClient";
 
 export default async function LessonPage({

@@ -2,9 +2,9 @@
 
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { authActionClient } from '../../../lib/safe-action';
-import { ActionError } from '../../../lib/action-error';
-import { prisma } from '../../../lib/prisma';
+import { authActionClient } from '../../../../lib/safe-action';
+import { ActionError } from '../../../../lib/action-error';
+import { prisma } from '../../../../lib/prisma';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Enter your current password'),

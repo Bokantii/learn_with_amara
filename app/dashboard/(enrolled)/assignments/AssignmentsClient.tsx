@@ -2,15 +2,15 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Card } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
+import { Card } from "../../../../components/ui/card";
+import { Badge } from "../../../../components/ui/badge";
+import { Button } from "../../../../components/ui/button";
+import { Input } from "../../../../components/ui/input";
+import { Label } from "../../../../components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "../../../components/ui/dialog";
+} from "../../../../components/ui/dialog";
 import {
   ClipboardList, Clock, CheckCircle2, AlertCircle, Calendar, Hourglass, Paperclip,
 } from "lucide-react";

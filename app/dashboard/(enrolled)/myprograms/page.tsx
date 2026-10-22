@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser } from "../../../lib/authz";
-import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
-import { prisma } from "../../../lib/prisma";
-import { Card } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Button } from "../../../components/ui/button";
-import { Progress } from "../../../components/ui/progress";
+import { getSessionUser } from "../../../../lib/authz";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../../lib/enrollment/status";
+import { prisma } from "../../../../lib/prisma";
+import { Card } from "../../../../components/ui/card";
+import { Badge } from "../../../../components/ui/badge";
+import { Button } from "../../../../components/ui/button";
+import { Progress } from "../../../../components/ui/progress";
 import { BookOpen, ChevronRight } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {

@@ -43,6 +43,22 @@ describe('getStudentBilling', () => {
     expect(enrollmentFindMany.mock.calls[0][0].where).toEqual({ userId: 'u_aisha' });
   });
 
+  it('keeps payments and enrollments of a CANCELLED enrollment in the history (#20)', async () => {
+    paymentFindMany.mockResolvedValue([
+      rawPayment({ enrollment: { status: 'CANCELLED', program: { name: 'TEF Canada Preparation' } } }),
+    ]);
+    enrollmentFindMany.mockResolvedValue([
+      { status: 'CANCELLED', joinedAt: new Date('2026-01-01'), endedAt: new Date('2026-03-01'), program: { name: 'TEF Canada Preparation' } },
+    ]);
+    const r = await getStudentBilling('u_cancelled');
+    // No status filter on either read — cancellation never hides history.
+    expect(paymentFindMany.mock.calls[0][0].where).not.toHaveProperty('enrollment');
+    expect(enrollmentFindMany.mock.calls[0][0].where).not.toHaveProperty('status');
+    expect(r.isEmpty).toBe(false);
+    expect(r.payments[0].enrollmentStatus).toBe('CANCELLED');
+    expect(r.enrollments[0].status).toBe('CANCELLED');
+  });
+
   it('is empty when the student has no payments', async () => {
     paymentFindMany.mockResolvedValue([]);
     const r = await getStudentBilling('u_x');

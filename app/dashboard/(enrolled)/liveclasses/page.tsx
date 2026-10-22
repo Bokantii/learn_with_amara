@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { getSessionUser } from "../../../lib/authz";
-import { prisma } from "../../../lib/prisma";
-import { VISIBLE_ENROLLMENT_STATUSES } from "../../../lib/live-class-entitlement";
+import { getSessionUser } from "../../../../lib/authz";
+import { prisma } from "../../../../lib/prisma";
+import { VISIBLE_ENROLLMENT_STATUSES } from "../../../../lib/live-class-entitlement";
 import LiveClassesClient from "./LiveClassesClient";
 
 export default async function LiveClassesPage() {

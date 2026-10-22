@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Card } from "../../../../components/ui/card";
-import { Button } from "../../../../components/ui/button";
-import { Badge } from "../../../../components/ui/badge";
+import { Card } from "../../../../../components/ui/card";
+import { Button } from "../../../../../components/ui/button";
+import { Badge } from "../../../../../components/ui/badge";
 import { ArrowLeft, CheckCircle2, FileText, ExternalLink } from "lucide-react";
 import { startLessonAction, completeLessonAction } from "./actions";
 

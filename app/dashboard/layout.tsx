@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import { User } from "lucide-react";
-import { getSessionUser, hasVisibleEnrollment } from "../../lib/authz";
+import { getSessionUser } from "../../lib/authz";
 import { getUnreadNotificationCount, getRecentNotifications } from "../../lib/notifications/queries";
 import { NotificationBell } from "../../components/NotificationBell";
 import NavLinks from "./NavLinks";
-import OnboardingEmptyState from "./OnboardingEmptyState";
 
 export default async function DashboardLayout({
   children,
@@ -17,9 +16,9 @@ export default async function DashboardLayout({
     redirect("/SignIn");
   }
 
-  // The dashboard shell shows for any student with a non-cancelled enrollment
-  // (PENDING / PAUSED / COMPLETED included) — course content is gated separately.
-  const enrolled = await hasVisibleEnrollment(user.id);
+  // Shell only (sign-in required). The enrollment gate lives in
+  // `(enrolled)/layout.tsx` so `/dashboard/billing` stays reachable for a
+  // CANCELLED-only student (#20).
   const displayName = user.name ?? user.email ?? "there";
   const firstName = displayName.split(" ")[0];
   const [unreadCount, notifications] = await Promise.all([
@@ -85,7 +84,7 @@ export default async function DashboardLayout({
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-8 bg-slate-50">
-          {enrolled ? children : <OnboardingEmptyState />}
+          {children}
         </main>
       </div>
     </div>

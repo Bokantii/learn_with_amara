@@ -2,9 +2,9 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { authActionClient } from '../../../../lib/safe-action';
-import { getEntitledPublishedLesson } from '../../../../lib/authz';
-import { prisma } from '../../../../lib/prisma';
+import { authActionClient } from '../../../../../lib/safe-action';
+import { getEntitledPublishedLesson } from '../../../../../lib/authz';
+import { prisma } from '../../../../../lib/prisma';
 
 const lessonIdSchema = z.object({
   lessonId: z.string().min(1),

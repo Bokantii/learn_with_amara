@@ -47,10 +47,14 @@ export const translations: Record<
       subheading: string;
       features: { title: string; description: string }[];
     };
-    testimonials: {
+    whyChoose: {
       heading: string;
       subheading: string;
-      quotes: string[];
+      benefits: { title: string; description: string }[];
+    };
+    // Reserved for real, client-supplied testimonials — not rendered until those exist.
+    testimonials: {
+      subheading: string;
     };
     pricingSection: {
       heading: string;
@@ -143,14 +147,34 @@ export const translations: Record<
         },
       ],
     },
-    testimonials: {
-      heading: 'What Our Students Say',
-      subheading: 'Join thousands of learners who reached their French exam goals with ICLP.',
-      quotes: [
-        'ICLP helped me pass my TCF exam with flying colors! The interactive lessons and mock exams were exactly what I needed.',
-        "The tutors are amazing and the platform is so easy to use. I've learned more in 3 months than I did in a year of traditional classes.",
-        'Fantastic platform! The progress tracking keeps me motivated and the certificates are recognized by employers worldwide.',
+    whyChoose: {
+      heading: 'Why Students Choose ICLP',
+      subheading: 'Practical, structured French preparation, taught live and there for you between classes.',
+      benefits: [
+        {
+          title: 'Interactive Live Classes via Zoom',
+          description:
+            'Learn in real time with your instructor and classmates in scheduled live sessions on Zoom.',
+        },
+        {
+          title: 'Structured Programs & Exercises',
+          description:
+            'Follow a clear path through modules, lessons and exercises built around your level and exam goals.',
+        },
+        {
+          title: 'Personalized Assignment Feedback',
+          description:
+            'Submit assignments and receive individual grades and feedback from your instructor.',
+        },
+        {
+          title: 'Flexible Access to Resources & Replays',
+          description:
+            'Revisit lesson resources and recordings of your live classes whenever it suits your schedule.',
+        },
       ],
+    },
+    testimonials: {
+      subheading: 'Start your language-learning journey with ICLP.',
     },
     pricingSection: {
       heading: 'Choose Your Learning Path',
@@ -300,14 +324,34 @@ export const translations: Record<
         },
       ],
     },
-    testimonials: {
-      heading: 'Ce que disent nos étudiants',
-      subheading: "Rejoignez des milliers d'apprenants qui ont atteint leurs objectifs d'examen de français grâce à ICLP.",
-      quotes: [
-        "ICLP m'a aidé à réussir mon examen TCF haut la main ! Les leçons interactives et les examens blancs étaient exactement ce dont j'avais besoin.",
-        "Les tuteurs sont incroyables et la plateforme est si facile à utiliser. J'ai appris plus en 3 mois qu'en un an de cours traditionnels.",
-        'Une plateforme fantastique ! Le suivi des progrès me garde motivé et les certificats sont reconnus par les employeurs du monde entier.',
+    whyChoose: {
+      heading: 'Pourquoi choisir ICLP ?',
+      subheading: 'Une préparation au français pratique et structurée, en direct et accessible entre les cours.',
+      benefits: [
+        {
+          title: 'Cours interactifs en direct sur Zoom',
+          description:
+            'Apprenez en temps réel avec votre enseignant et vos camarades lors de séances en direct programmées sur Zoom.',
+        },
+        {
+          title: 'Programmes structurés et exercices',
+          description:
+            "Suivez un parcours clair de modules, de leçons et d'exercices adaptés à votre niveau et à vos objectifs d'examen.",
+        },
+        {
+          title: 'Commentaires personnalisés sur les devoirs',
+          description:
+            'Remettez vos devoirs et recevez une note et des commentaires individuels de votre enseignant.',
+        },
+        {
+          title: 'Accès flexible aux ressources et aux rediffusions',
+          description:
+            'Retrouvez les ressources des leçons et les enregistrements de vos cours en direct quand cela vous convient.',
+        },
       ],
+    },
+    testimonials: {
+      subheading: 'Commencez votre apprentissage des langues avec ICLP.',
     },
     pricingSection: {
       heading: "Choisissez votre parcours d'apprentissage",

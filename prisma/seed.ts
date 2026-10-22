@@ -72,6 +72,9 @@ async function main() {
     // on file — sees the dashboard shell + an empty billing page, but no course
     // content until an admin moves the enrollment PENDING -> ACTIVE.
     { email: 'pending.pay@example.com', name: 'Pending Payer', track: 'tcf-exam-prep', status: 'PENDING' as const },
+    // Billing-history fixture (#20): only enrollment is CANCELLED, with a past
+    // payment — keeps read-only /dashboard/billing access, but no other pages.
+    { email: 'cancelled.only@example.com', name: 'Cancelled Student', track: 'tef-canada-prep', status: 'CANCELLED' as const },
   ];
 
   const studentPasswordHashDefault = await bcrypt.hash('student1234', 10);
@@ -242,6 +245,7 @@ async function main() {
   const paymentSeeds = [
     { studentEmail: 'aisha.bello@example.com', track: 'tcf-exam-prep', amountCents: 30000, currency: 'cad', method: 'Bank transfer', reference: 'ICLP-2026-0142', paidAt: new Date('2026-01-14') },
     { studentEmail: 'elena.rossi@example.com', track: 'delf-dalf-track', amountCents: 30000, currency: 'cad', method: 'Interac e-Transfer', reference: 'ICLP-2026-0173', paidAt: new Date('2026-01-22') },
+    { studentEmail: 'cancelled.only@example.com', track: 'tef-canada-prep', amountCents: 25000, currency: 'cad', method: 'Bank transfer', reference: 'ICLP-2026-0188', paidAt: new Date('2026-02-03') },
   ];
   for (const seed of paymentSeeds) {
     const studentId = students.get(seed.studentEmail)!;

@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { checkAttendanceCheckInRateLimit } from '../rate-limit';
 import { isUserEntitledToLiveClass } from '../live-class-entitlement';
+import { ATTENDANCE_CHECKIN_ENROLLMENT_STATUSES } from '../enrollment/status';
 import { hashAttendanceToken } from './token';
 import { computeCheckInStatus } from './status';
 
@@ -117,7 +118,13 @@ export async function checkInToAttendanceSession(input: {
     return { ok: false, reason: 'CLASS_NOT_ELIGIBLE' };
   }
 
-  const entitled = await isUserEntitledToLiveClass(studentUserId, liveClass);
+  // Self check-in needs an ACTIVE enrollment (#25), re-read here at submit
+  // time so a status change after the QR page loaded still takes effect.
+  const entitled = await isUserEntitledToLiveClass(
+    studentUserId,
+    liveClass,
+    ATTENDANCE_CHECKIN_ENROLLMENT_STATUSES
+  );
   if (!entitled) {
     return { ok: false, reason: 'NOT_ENTITLED' };
   }

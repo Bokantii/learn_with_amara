@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { getSessionUser } from "../../../lib/authz";
-import { prisma } from "../../../lib/prisma";
-import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
+import { getSessionUser } from "../../../../lib/authz";
+import { prisma } from "../../../../lib/prisma";
+import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../../lib/enrollment/status";
 import AssignmentsClient from "./AssignmentsClient";
 
 export default async function AssignmentsPage() {
