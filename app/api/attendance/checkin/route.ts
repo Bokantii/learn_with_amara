@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { getSessionUser } from '../../../../lib/authz';
 import { checkInToAttendanceSession, type CheckInFailureReason } from '../../../../lib/attendance/checkin';
+import { getClientIp } from '../../../../lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ export const dynamic = 'force-dynamic';
 
 const STATUS_BY_REASON: Record<CheckInFailureReason, number> = {
   RATE_LIMITED: 429,
+  TEMPORARILY_UNAVAILABLE: 503,
   ALREADY_CHECKED_IN: 409,
   NOT_ENTITLED: 403,
   CLASS_NOT_ELIGIBLE: 409,
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
     const result = await checkInToAttendanceSession({
       rawToken: token,
       studentUserId: user.id,
+      clientIp: getClientIp(request.headers),
     });
 
     if (result.ok) {
@@ -93,7 +96,12 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       { ok: false, reason: result.reason, existingStatus: result.existingStatus ?? null },
-      { status: STATUS_BY_REASON[result.reason] }
+      {
+        status: STATUS_BY_REASON[result.reason],
+        headers: result.retryAfterSeconds
+          ? { 'Retry-After': String(result.retryAfterSeconds) }
+          : undefined,
+      }
     );
   } catch (error) {
     Sentry.captureException(error, { extra: { route: 'api/attendance/checkin' } });

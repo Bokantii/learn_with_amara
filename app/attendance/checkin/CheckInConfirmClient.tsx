@@ -24,6 +24,7 @@ const REASON_MESSAGE: Record<string, string> = {
   CLASS_NOT_ELIGIBLE: 'This class is not currently accepting check-ins.',
   NOT_ENTITLED: "You don't have an active enrollment for this class. Contact ICLP if you think this is a mistake.",
   RATE_LIMITED: 'Too many attempts. Please wait a minute and try again.',
+  TEMPORARILY_UNAVAILABLE: 'Check-in is temporarily unavailable. Please try again shortly.',
 };
 
 export default function CheckInConfirmClient({

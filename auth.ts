@@ -13,6 +13,11 @@ class RateLimitedError extends CredentialsSignin {
   code = 'rate_limited';
 }
 
+/** The rate limiter can't be trusted (missing production config) — refuse. */
+class RateLimitUnavailableError extends CredentialsSignin {
+  code = 'unavailable';
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
@@ -39,9 +44,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const ip = getClientIp(request.headers);
-        const rateLimit = await checkLoginRateLimit(`${ip}:${email.toLowerCase()}`);
+        const rateLimit = await checkLoginRateLimit({ ip, email });
         if (!rateLimit.success) {
-          throw new RateLimitedError();
+          throw rateLimit.reason === 'unavailable'
+            ? new RateLimitUnavailableError()
+            : new RateLimitedError();
         }
 
         const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });

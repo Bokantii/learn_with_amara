@@ -15,16 +15,25 @@ export default function ResetPasswordRequest() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     setIsSubmitting(true);
     try {
-      await requestPasswordResetAction({ email });
-    } finally {
-      // Always show the same neutral confirmation — never reveal whether the
-      // address is registered.
+      const result = await requestPasswordResetAction({ email });
+      // Only a service outage is surfaced; it never depends on the address.
+      if (result?.serverError) {
+        setError(result.serverError);
+        return;
+      }
+      // Otherwise always the same neutral confirmation — never reveal whether
+      // the address is registered.
       setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -69,6 +78,11 @@ export default function ResetPasswordRequest() {
                         required
                       />
                     </div>
+                    {error && (
+                      <p className="text-sm text-destructive" role="alert">
+                        {error}
+                      </p>
+                    )}
                     <Button
                       type="submit"
                       className="w-full h-12 bg-primary hover:bg-primary/90"

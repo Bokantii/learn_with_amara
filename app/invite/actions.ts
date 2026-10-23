@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { headers } from 'next/headers';
 import { publicActionClient } from '../../lib/safe-action';
 import { ActionError } from '../../lib/action-error';
-import { checkInviteAcceptRateLimit, getClientIp } from '../../lib/rate-limit';
+import { checkInviteAcceptRateLimit, getClientIp, rateLimitMessage } from '../../lib/rate-limit';
 import { consumeAccountToken } from '../../lib/account/lifecycle';
 
 const acceptSchema = z.object({
@@ -24,7 +24,7 @@ export const acceptInviteAction = publicActionClient
     const ip = getClientIp(await headers());
     const rate = await checkInviteAcceptRateLimit(ip);
     if (!rate.success) {
-      throw new ActionError('Too many attempts. Please wait a minute and try again.');
+      throw new ActionError(rateLimitMessage(rate.reason));
     }
 
     const passwordHash = await bcrypt.hash(parsedInput.password, 10);

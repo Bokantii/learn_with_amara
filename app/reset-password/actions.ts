@@ -7,9 +7,10 @@ import { headers } from 'next/headers';
 import { publicActionClient } from '../../lib/safe-action';
 import { ActionError } from '../../lib/action-error';
 import {
-  checkInviteAcceptRateLimit,
-  checkPasswordResetRateLimit,
+  checkPasswordResetCompleteRateLimit,
+  checkPasswordResetRequestRateLimit,
   getClientIp,
+  rateLimitMessage,
 } from '../../lib/rate-limit';
 import { consumeAccountToken, issuePasswordReset } from '../../lib/account/lifecycle';
 import { sendAccountEmail } from '../../lib/account/mail';
@@ -29,8 +30,12 @@ export const requestPasswordResetAction = publicActionClient
   .schema(requestSchema)
   .action(async ({ parsedInput }) => {
     const ip = getClientIp(await headers());
-    const rate = await checkPasswordResetRateLimit(`${ip}:${parsedInput.email.toLowerCase()}`);
+    const rate = await checkPasswordResetRequestRateLimit({ ip, email: parsedInput.email });
     if (!rate.success) {
+      if (rate.reason === 'unavailable') {
+        // Independent of the address, so it reveals nothing about the account.
+        throw new ActionError('Password reset is temporarily unavailable. Please try again shortly.');
+      }
       // Same neutral response — never confirm/deny the address even under throttle.
       return { ok: true };
     }
@@ -66,9 +71,9 @@ export const resetPasswordAction = publicActionClient
   .schema(resetSchema)
   .action(async ({ parsedInput }) => {
     const ip = getClientIp(await headers());
-    const rate = await checkInviteAcceptRateLimit(ip);
+    const rate = await checkPasswordResetCompleteRateLimit(ip);
     if (!rate.success) {
-      throw new ActionError('Too many attempts. Please wait a minute and try again.');
+      throw new ActionError(rateLimitMessage(rate.reason));
     }
 
     const passwordHash = await bcrypt.hash(parsedInput.password, 10);

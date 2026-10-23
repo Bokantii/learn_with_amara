@@ -3,13 +3,12 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { headers } from 'next/headers';
-import { createSafeActionClient } from 'next-safe-action';
 import { prisma } from '../../lib/prisma';
 import { resend, EMAIL_FROM } from '../../lib/email';
 import WelcomeEmail from '../../emails/WelcomeEmail';
 import { checkSignUpRateLimit, getClientIp } from '../../lib/rate-limit';
-
-const actionClient = createSafeActionClient();
+import { publicActionClient } from '../../lib/safe-action';
+import { ActionError } from '../../lib/action-error';
 
 const signUpSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required'),
@@ -25,13 +24,17 @@ async function getOrigin() {
   return `${protocol}://${host}`;
 }
 
-export const signUpAction = actionClient
+export const signUpAction = publicActionClient
   .schema(signUpSchema)
   .action(async ({ parsedInput }) => {
     const ip = getClientIp(await headers());
-    const rateLimit = await checkSignUpRateLimit(ip);
+    const rateLimit = await checkSignUpRateLimit({ ip, email: parsedInput.email });
     if (!rateLimit.success) {
-      throw new Error('Too many sign-up attempts. Please wait a minute and try again.');
+      throw new ActionError(
+        rateLimit.reason === 'unavailable'
+          ? 'Sign-up is temporarily unavailable. Please try again shortly.'
+          : 'Too many sign-up attempts. Please wait a minute and try again.'
+      );
     }
 
     const email = parsedInput.email.toLowerCase();

@@ -78,7 +78,9 @@ export default function SignIn() {
         setError(
           result?.code === "rate_limited"
             ? "Too many sign-in attempts. Please wait a minute and try again."
-            : "Invalid email or password."
+            : result?.code === "unavailable"
+              ? "Sign-in is temporarily unavailable. Please try again shortly."
+              : "Invalid email or password."
         );
         return;
       }

@@ -4,11 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { cookies, headers } from 'next/headers';
 import { publicActionClient } from '../../lib/safe-action';
-import {
-  checkAssessmentAttemptRateLimit,
-  getClientIp,
-  rateLimitConfigured,
-} from '../../lib/rate-limit';
+import { checkAssessmentAttemptRateLimit, getClientIp } from '../../lib/rate-limit';
 import {
   MAX_TEXT_RESPONSE_CHARS,
   PLACEMENT_CLAIM_COOKIE,
@@ -45,17 +41,8 @@ export const startAssessmentAction = publicActionClient
   .action(async ({ parsedInput }) => {
     const actor = await getRequestActor();
 
-    // The anonymous branch is an unauthenticated row-writer. If no real rate
-    // limiter is configured, fail *closed* in production rather than let it run
-    // uncapped (dev/test have no Upstash and are unaffected).
-    if (
-      !actor.userId &&
-      !rateLimitConfigured &&
-      process.env.NODE_ENV === 'production'
-    ) {
-      return { ok: false as const, error: 'RATE_LIMITED' as const };
-    }
-
+    // The anonymous branch is an unauthenticated row-writer. Without Upstash in
+    // production the limiter itself fails closed, so this never runs uncapped.
     const rate = await checkAssessmentAttemptRateLimit(await rateLimitKey(actor));
     if (!rate.success) {
       return { ok: false as const, error: 'RATE_LIMITED' as const };

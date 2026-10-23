@@ -23,6 +23,7 @@ settings for production. Split by whether the app is usable without it:
 | `RESEND_API_KEY` + `EMAIL_FROM` (verified domain) | Invites, password resets, grade/class notifications never send |
 | `NEXT_PUBLIC_APP_URL` | Required in production (the app throws rather than trust forwarded headers); every emailed invite/reset link and the attendance QR URL depend on it |
 | `CRON_SECRET` | Live-class reminders never fire (the cron route fails closed without it — see §3 below) |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, **or** `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Vercel Marketplace naming; server-only) | One **complete pair from one scheme** is required; pairs are never mixed, a half-set pair counts as misconfigured, and `UPSTASH_REDIS_REST_*` wins if both are set (`lib/upstash-credentials.mjs`). **Production build fails** (`scripts/check-production-env.mjs` in `vercel-build`), and any deployment that still lacks them refuses sign-in, sign-up, password reset, invite acceptance, QR check-in, newsletter and placement-test starts with a "temporarily unavailable" message (fails closed, reported to Sentry). Provision via Vercel → Storage/Marketplace → **Upstash for Redis**, connected to `learn-with-amara` for **Production**; use a **separate** Upstash database for **Preview** (preview deployments build without it but fail closed at runtime). If Upstash is configured but errors or takes >1.5 s, each server instance enforces the same limits in memory until it recovers and logs a Sentry warning. **This fallback is per-instance protection only, not globally consistent rate limiting**: instances count separately and reset on cold start, so traffic spread across N instances can get up to N× the limit during an outage. |
 
 **Optional / accepted-as-deferred for V1** — the app degrades safely without these, not broken:
 
@@ -30,7 +31,6 @@ settings for production. Split by whether the app is usable without it:
 |---|---|
 | `AUTH_GOOGLE_ID`/`_SECRET`, `AUTH_FACEBOOK_ID`/`_SECRET` | OAuth sign-in buttons still render (SPEC §5.3 flags this as deferred — hiding them when unconfigured is its own follow-up, not part of this gate); credentials sign-in is unaffected |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | `/checkout` shows a manual-enrollment notice instead of a payment form (Launch Gate item 7 — this is the intended V1 default, not a bug) |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Rate limiting is disabled (fails **open** — every request is allowed) on login, sign-up, password reset and attendance check-in. **Recommendation: configure this before real onboarding** — it's the one "optional" item worth treating as required for anything beyond a small trusted pilot. |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | Sentry is a no-op — no error monitoring, but nothing breaks |
 
 ## 2. Fresh production database

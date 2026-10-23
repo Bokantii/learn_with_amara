@@ -27,6 +27,7 @@ function isUniqueConstraintError(error: unknown): boolean {
 
 export type CheckInFailureReason =
   | 'RATE_LIMITED'
+  | 'TEMPORARILY_UNAVAILABLE'
   | 'INVALID_OR_EXPIRED'
   | 'CLASS_NOT_ELIGIBLE'
   | 'NOT_ENTITLED'
@@ -34,7 +35,7 @@ export type CheckInFailureReason =
 
 export type CheckInResult =
   | { ok: true; status: 'PRESENT' | 'LATE'; checkedInAt: Date }
-  | { ok: false; reason: CheckInFailureReason; existingStatus?: string };
+  | { ok: false; reason: CheckInFailureReason; existingStatus?: string; retryAfterSeconds?: number };
 
 export type CheckInPreview =
   | {
@@ -85,12 +86,18 @@ export async function getCheckInPreview(rawToken: string): Promise<CheckInPrevie
 export async function checkInToAttendanceSession(input: {
   rawToken: string;
   studentUserId: string;
+  /** Platform-derived client IP (`getClientIp`); never taken from the body. */
+  clientIp?: string;
 }): Promise<CheckInResult> {
-  const { rawToken, studentUserId } = input;
+  const { rawToken, studentUserId, clientIp = 'unknown' } = input;
 
-  const rateLimit = await checkAttendanceCheckInRateLimit(studentUserId);
+  const rateLimit = await checkAttendanceCheckInRateLimit({ studentUserId, ip: clientIp });
   if (!rateLimit.success) {
-    return { ok: false, reason: 'RATE_LIMITED' };
+    return {
+      ok: false,
+      reason: rateLimit.reason === 'unavailable' ? 'TEMPORARILY_UNAVAILABLE' : 'RATE_LIMITED',
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+    };
   }
 
   const tokenHash = hashAttendanceToken(rawToken);

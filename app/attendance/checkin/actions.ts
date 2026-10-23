@@ -2,8 +2,10 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { authActionClient } from '../../../lib/safe-action';
 import { checkInToAttendanceSession } from '../../../lib/attendance/checkin';
+import { getClientIp } from '../../../lib/rate-limit';
 
 /**
  * Student QR check-in (web). The student identity is taken from the session
@@ -25,6 +27,7 @@ export const confirmAttendanceCheckInAction = authActionClient
     const result = await checkInToAttendanceSession({
       rawToken: parsedInput.token,
       studentUserId: ctx.userId,
+      clientIp: getClientIp(await headers()),
     });
 
     if (result.ok) {

@@ -216,6 +216,30 @@ describe('checkInToAttendanceSession', () => {
     });
   });
 
+  it('rate-limits by the session student and the platform client IP', async () => {
+    sessionFindUnique.mockResolvedValue(null);
+
+    await checkInToAttendanceSession({ rawToken: RAW_TOKEN, studentUserId: STUDENT_ID, clientIp: '203.0.113.7' });
+
+    expect(checkAttendanceCheckInRateLimit).toHaveBeenCalledWith({ studentUserId: STUDENT_ID, ip: '203.0.113.7' });
+  });
+
+  it('limiter unavailable (production misconfiguration): TEMPORARILY_UNAVAILABLE, nothing written', async () => {
+    checkAttendanceCheckInRateLimit.mockResolvedValue({
+      success: false,
+      remaining: 0,
+      reset: 0,
+      reason: 'unavailable',
+      retryAfterSeconds: 60,
+    });
+
+    const result = await checkInToAttendanceSession({ rawToken: RAW_TOKEN, studentUserId: STUDENT_ID });
+
+    expect(result).toEqual({ ok: false, reason: 'TEMPORARILY_UNAVAILABLE', retryAfterSeconds: 60 });
+    expect(sessionFindUnique).not.toHaveBeenCalled();
+    expect(recordCreate).not.toHaveBeenCalled();
+  });
+
   it('rate-limited: returns RATE_LIMITED and makes zero Prisma calls', async () => {
     checkAttendanceCheckInRateLimit.mockResolvedValue({ success: false, remaining: 0, reset: 0 });
 
