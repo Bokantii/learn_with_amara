@@ -9,6 +9,7 @@ import WelcomeEmail from '../../emails/WelcomeEmail';
 import { checkSignUpRateLimit, getClientIp } from '../../lib/rate-limit';
 import { publicActionClient } from '../../lib/safe-action';
 import { ActionError } from '../../lib/action-error';
+import { getAppOriginOrEmpty } from '../../lib/app-url';
 
 const signUpSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required'),
@@ -16,13 +17,6 @@ const signUpSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
-
-async function getOrigin() {
-  const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http';
-  return `${protocol}://${host}`;
-}
 
 export const signUpAction = publicActionClient
   .schema(signUpSchema)
@@ -55,7 +49,9 @@ export const signUpAction = publicActionClient
     // Resend's SDK resolves with { error } rather than throwing, so check
     // both that and a wrapping try/catch for genuine network failures.
     try {
-      const appUrl = await getOrigin();
+      // Never derived from request headers (#24b): only NEXT_PUBLIC_APP_URL in
+      // production, or '' (a relative link) rather than failing sign-up.
+      const appUrl = await getAppOriginOrEmpty();
       const { error } = await resend.emails.send({
         from: EMAIL_FROM,
         to: email,

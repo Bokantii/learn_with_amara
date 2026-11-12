@@ -6,15 +6,9 @@ import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LocalClassTime } from '@/components/LocalClassTime';
 
 export const dynamic = 'force-dynamic';
-
-function formatRange(startsAt: Date, endsAt: Date) {
-  const date = startsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  const start = startsAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  const end = endsAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return `${date} · ${start} – ${end}`;
-}
 
 export default async function AttendanceManageListPage() {
   const user = await getSessionUser();
@@ -50,7 +44,9 @@ export default async function AttendanceManageListPage() {
             </div>
             <div className="flex items-center gap-1.5 text-sm text-slate-500 mt-1">
               <Calendar className="w-3.5 h-3.5 text-sky-500" aria-hidden="true" />
-              <span>{formatRange(c.startsAt, c.endsAt)}</span>
+              <span>
+                <LocalClassTime startsAt={c.startsAt.toISOString()} endsAt={c.endsAt.toISOString()} variant="dateTime" />
+              </span>
               <span className="text-slate-400">· {c.instructorName}</span>
             </div>
           </div>

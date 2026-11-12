@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "../../../lib/authz";
 import { prisma } from "../../../lib/prisma";
 import { getStudentResults } from "../../../lib/results/queries";
+import { LocalClassTime } from "../../../components/LocalClassTime";
 import { getRecentStudentAnnouncements } from "../../../lib/announcements/queries";
 import { cefrLabel } from "../../../lib/assessments/placement";
 import { CONTENT_ACCESS_ENROLLMENT_STATUSES } from "../../../lib/enrollment/status";
@@ -249,26 +250,17 @@ export default async function Dashboard() {
                       <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600">
                         <Calendar className="w-3 h-3 md:w-4 md:h-4 text-sky-500 flex-shrink-0" />
                         <span>
-                          {nextLiveClass.startsAt.toLocaleDateString("en-US", {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          <LocalClassTime startsAt={nextLiveClass.startsAt.toISOString()} variant="date" />
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600">
                         <Clock className="w-3 h-3 md:w-4 md:h-4 text-sky-500 flex-shrink-0" />
                         <span>
-                          {nextLiveClass.startsAt.toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                          {" – "}
-                          {nextLiveClass.endsAt.toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          <LocalClassTime
+                            startsAt={nextLiveClass.startsAt.toISOString()}
+                            endsAt={nextLiveClass.endsAt.toISOString()}
+                            variant="time"
+                          />
                         </span>
                       </div>
                     </div>

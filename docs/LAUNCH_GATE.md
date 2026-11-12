@@ -21,7 +21,7 @@ settings for production. Split by whether the app is usable without it:
 | `DATABASE_URL` | Nothing works |
 | `BLOB_READ_WRITE_TOKEN` | Assignment file submission throws |
 | `RESEND_API_KEY` + `EMAIL_FROM` (verified domain) | Invites, password resets, grade/class notifications never send |
-| `NEXT_PUBLIC_APP_URL` | Required in production (the app throws rather than trust forwarded headers); every emailed invite/reset link and the attendance QR URL depend on it |
+| `NEXT_PUBLIC_APP_URL` | Required in production (the app throws rather than trust forwarded headers); every emailed invite/reset/welcome link, the attendance QR URL and Stripe redirects depend on it. Must be a bare `https://` origin; the **production build fails** without it (`scripts/check-production-env.mjs`) |
 | `CRON_SECRET` | Live-class reminders never fire (the cron route fails closed without it — see §3 below) |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, **or** `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Vercel Marketplace naming; server-only) | One **complete pair from one scheme** is required; pairs are never mixed, a half-set pair counts as misconfigured, and `UPSTASH_REDIS_REST_*` wins if both are set (`lib/upstash-credentials.mjs`). **Production build fails** (`scripts/check-production-env.mjs` in `vercel-build`), and any deployment that still lacks them refuses sign-in, sign-up, password reset, invite acceptance, QR check-in, newsletter and placement-test starts with a "temporarily unavailable" message (fails closed, reported to Sentry). Provision via Vercel → Storage/Marketplace → **Upstash for Redis**, connected to `learn-with-amara` for **Production**; use a **separate** Upstash database for **Preview** (preview deployments build without it but fail closed at runtime). If Upstash is configured but errors or takes >1.5 s, each server instance enforces the same limits in memory until it recovers and logs a Sentry warning. **This fallback is per-instance protection only, not globally consistent rate limiting**: instances count separately and reset on cold start, so traffic spread across N instances can get up to N× the limit during an outage. |
 
@@ -46,6 +46,11 @@ DATABASE_URL="<production connection string>" npx prisma generate
 Do **not** run `prisma db seed` against production — `prisma/seed.ts` is demo/dev data only
 (CLAUDE.md §5: "Demo data belongs only in explicit seeds/fixtures/test helpers"). The production
 database starts genuinely empty; the only row it needs is the first admin (§3).
+
+`prisma/seed.ts` enforces this itself (`lib/seed-guard.ts`): it refuses when `NODE_ENV`/`VERCEL_ENV`
+is `production`, and refuses any non-local `DATABASE_URL` (including a `?host=`/`?hostaddr=`
+override) unless `SEED_ALLOW_REMOTE` is set to that database's **exact hostname**, which is meant
+only for deliberately seeding the separate Preview database.
 
 Before pointing this at the real production database for the first time, verify the migration
 history itself replays cleanly from zero (it has only ever been applied incrementally onto one

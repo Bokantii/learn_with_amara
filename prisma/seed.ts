@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
+import { seedRefusalReason } from '../lib/seed-guard';
 
 async function main() {
   const studentPasswordHash = await bcrypt.hash('demo1234', 10);
@@ -784,11 +785,17 @@ async function main() {
   console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), instructor@iclp.com (instructor), 5 programs, 7 students, 2 groups, 6 assignments (1 group-scoped), 7 submissions (3 graded), 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed), 1 published placement assessment (24 French single-choice questions, A1–C1), 8 students (1 PENDING/unpaid billing fixture), 3 manual payments, 4 announcements (3 published, 1 draft), lifecycle fixtures: invited.student@example.com + invited.instructor@example.com (outstanding invites), archived.student@example.com (deactivated, with a graded submission + payment kept on file).');
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+const refusal = seedRefusalReason(process.env);
+if (refusal) {
+  console.error(refusal);
+  process.exitCode = 1;
+} else {
+  main()
+    .catch((error) => {
+      console.error(error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

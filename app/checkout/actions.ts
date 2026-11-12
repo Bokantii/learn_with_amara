@@ -1,8 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getAppOrigin } from '../../lib/app-url';
 import { authActionClient } from '../../lib/safe-action';
 import { ActionError } from '../../lib/action-error';
 import { stripe, isStripeConfigured } from '../../lib/stripe';
@@ -14,13 +14,6 @@ const createCheckoutSessionSchema = z.object({
   planId: z.string().min(1),
   currency: z.enum(['CAD', 'NGN', 'USD', 'GBP']).optional(),
 });
-
-async function getOrigin() {
-  const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http';
-  return `${protocol}://${host}`;
-}
 
 export const createCheckoutSessionAction = authActionClient
   .schema(createCheckoutSessionSchema)
@@ -56,7 +49,9 @@ export const createCheckoutSessionAction = authActionClient
       description = tier?.description;
     }
 
-    const origin = await getOrigin();
+    // Stripe's success/cancel redirect origin comes only from
+    // NEXT_PUBLIC_APP_URL in production, never from forwarded headers (#24b).
+    const origin = await getAppOrigin();
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',

@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { DEFAULT_MEETING_URL, CANCELLATION_REASON_LABEL } from '../liveclass';
 import { resolveLiveClassRecipients } from './recipients';
+import { formatClassTime } from '../class-time';
 import { dispatchNotification, type NotificationRunSummary } from './dispatch';
 import LiveClassReminderEmail from '../../emails/LiveClassReminderEmail';
 import LiveClassCancelledEmail from '../../emails/LiveClassCancelledEmail';
@@ -13,20 +14,6 @@ import LiveClassRescheduledEmail from '../../emails/LiveClassRescheduledEmail';
  * message, resolves the currently-entitled recipients (never a captured list),
  * builds copy + dedupe keys, and delegates all delivery mechanics to dispatch.
  */
-
-function formatUtc(date: Date): string {
-  return (
-    date.toLocaleString('en-US', {
-      timeZone: 'UTC',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    }) + ' UTC'
-  );
-}
 
 function durationMinutes(startsAt: Date, endsAt: Date): number {
   return Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
@@ -59,7 +46,7 @@ export async function sendLiveClassReminder(
   }
 
   const startsAtKey = liveClass.startsAt.toISOString();
-  const whenFormatted = formatUtc(liveClass.startsAt);
+  const whenFormatted = formatClassTime(liveClass.startsAt);
   const meetingUrl = liveClass.meetingUrl ?? DEFAULT_MEETING_URL;
   const duration = durationMinutes(liveClass.startsAt, liveClass.endsAt);
   const title = `"${liveClass.title}" starts soon`;
@@ -107,7 +94,7 @@ export async function sendLiveClassCancellation(
     return { recipients: 0, channels: {} };
   }
 
-  const whenFormatted = formatUtc(liveClass.startsAt);
+  const whenFormatted = formatClassTime(liveClass.startsAt);
   const reasonLabel = liveClass.cancellationReason
     ? CANCELLATION_REASON_LABEL[
         liveClass.cancellationReason as keyof typeof CANCELLATION_REASON_LABEL
@@ -158,7 +145,7 @@ export async function sendLiveClassReschedule(
   }
 
   const rescheduledAtKey = liveClass.rescheduledAt.toISOString();
-  const newWhenFormatted = formatUtc(liveClass.startsAt);
+  const newWhenFormatted = formatClassTime(liveClass.startsAt);
   const meetingUrl = liveClass.meetingUrl ?? DEFAULT_MEETING_URL;
   const title = `"${liveClass.title}" was rescheduled`;
   const message = `New time: ${newWhenFormatted}`;

@@ -7,15 +7,22 @@ import { pathToFileURL } from 'node:url';
 import { resolveUpstashCredentials } from '../lib/upstash-credentials.mjs';
 
 /**
- * Problems that must block a production build. Rate limiting on sign-in,
- * sign-up, password reset, invites and QR check-in needs a complete Upstash
- * URL + token pair from one naming scheme (lib/rate-limit.ts fails closed
- * without it in production).
+ * Problems that must block a production build:
+ * - Rate limiting on sign-in, sign-up, password reset, invites and QR check-in
+ *   needs a complete Upstash URL + token pair from one naming scheme
+ *   (lib/rate-limit.ts fails closed without it in production).
+ * - NEXT_PUBLIC_APP_URL must be a bare https origin (lib/app-url.ts never
+ *   trusts forwarded headers in production).
  *
  * @param {Record<string, string | undefined>} env
  * @returns {string[]}
  */
 export function productionEnvProblems(env = process.env) {
+  return [...upstashProblems(env), ...appUrlProblems(env)];
+}
+
+/** @param {Record<string, string | undefined>} env */
+function upstashProblems(env) {
   const upstash = resolveUpstashCredentials(env);
   if (upstash.status === 'missing') {
     return [
@@ -24,6 +31,31 @@ export function productionEnvProblems(env = process.env) {
   }
   if (upstash.status === 'incomplete') {
     return upstash.problems.map((p) => `Upstash Redis credentials are incomplete: ${p}`);
+  }
+  return [];
+}
+
+/**
+ * NEXT_PUBLIC_APP_URL is the only trusted source of the public origin in
+ * production (lib/app-url.ts): emailed invite/reset/welcome links, the
+ * attendance QR and Stripe redirects are built from it, never from request
+ * headers. It must be a bare https origin (no path), e.g. https://iclanguages.com.
+ *
+ * @param {Record<string, string | undefined>} env
+ */
+function appUrlProblems(env) {
+  const raw = env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) {
+    return ['NEXT_PUBLIC_APP_URL is missing: set it to the public https origin, e.g. https://iclanguages.com'];
+  }
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return ['NEXT_PUBLIC_APP_URL is not a valid URL: set it to the public https origin, e.g. https://iclanguages.com'];
+  }
+  if (url.protocol !== 'https:' || url.origin !== raw.replace(/\/+$/, '')) {
+    return ['NEXT_PUBLIC_APP_URL must be a bare https origin with no path, query or credentials, e.g. https://iclanguages.com'];
   }
   return [];
 }

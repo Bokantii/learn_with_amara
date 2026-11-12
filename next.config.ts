@@ -45,6 +45,18 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: securityHeaders,
       },
+      // Single-use invite / password-reset tokens ride in the URL path, so
+      // these pages send no Referer at all (SPEC Known Deferred Issue #23g).
+      // Must stay AFTER the global rule: when two rules set the same header
+      // key, Next.js applies the later one.
+      {
+        source: '/invite/:token',
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      },
+      {
+        source: '/reset-password/:token',
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      },
     ];
   },
 };
