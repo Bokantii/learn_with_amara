@@ -56,5 +56,7 @@ export default async function LiveClassesPage() {
     rescheduledAt: lc.rescheduledAt ? lc.rescheduledAt.toISOString() : null,
   }));
 
-  return <LiveClassesClient liveClasses={rows} />;
+  // Upcoming vs past is decided against the server's clock so the server and
+  // client renders agree (lib/live-class-tabs.ts).
+  return <LiveClassesClient liveClasses={rows} nowIso={new Date().toISOString()} />;
 }

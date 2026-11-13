@@ -8,6 +8,16 @@ async function signIn(page: import('@playwright/test').Page, email: string, pass
   await page.waitForURL((url) => !url.pathname.startsWith('/SignIn'));
 }
 
+// A YYYY-MM-DD date `days` from today, for classes that must still be upcoming
+// whenever the suite runs (the student page only lists classes that haven't
+// ended under "Upcoming" — lib/live-class-tabs.ts).
+function daysFromNow(days: number): { input: string; date: Date } {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return { input: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, date: d };
+}
+
 test('unauthenticated visitor cannot access live class pages', async ({ page }) => {
   await page.goto('/dashboard/liveclasses');
   await expect(page).toHaveURL(/\/SignIn/);
@@ -75,7 +85,15 @@ test('admin creates a Group-level live class', async ({ page }) => {
 test('program-level class is visible to an entitled student and invisible outside the program', async ({ page }) => {
   await signIn(page, 'aisha.bello@example.com', 'student1234');
   await page.goto('/dashboard/liveclasses');
-  await expect(page.getByText('TCF Speaking Practice')).toBeVisible();
+  // The seeded class (Sept 2026) has ended without being marked completed: it
+  // must be listed under Past Classes as "Ended", with no Join action.
+  await page.getByRole('tab', { name: 'Past Classes' }).click();
+  const endedCard = page.locator('[data-slot="card"]', { hasText: 'TCF Speaking Practice' });
+  await expect(endedCard).toBeVisible();
+  await expect(endedCard.getByText('Ended', { exact: true })).toBeVisible();
+  await expect(endedCard.getByRole('link', { name: 'Join Class' })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Upcoming' }).click();
+  await expect(page.getByText('TCF Speaking Practice')).toHaveCount(0);
 
   await page.context().clearCookies();
   await signIn(page, 'marcus.chen@example.com', 'student1234');
@@ -87,6 +105,7 @@ test('program-level class is visible to an entitled student and invisible outsid
 test('group-level class is visible to group members only, not a same-program non-member', async ({ page }) => {
   await signIn(page, 'aisha.bello@example.com', 'student1234');
   await page.goto('/dashboard/liveclasses');
+  await page.getByRole('tab', { name: 'Past Classes' }).click();
   await expect(page.getByText('Morning Cohort Grammar Review')).toBeVisible();
 
   await page.context().clearCookies();
@@ -95,6 +114,7 @@ test('group-level class is visible to group members only, not a same-program non
   await page.goto('/dashboard/liveclasses');
   expect(await page.content()).not.toContain('Morning Cohort Grammar Review');
   // But noah should still see the program-level class.
+  await page.getByRole('tab', { name: 'Past Classes' }).click();
   await expect(page.getByText('TCF Speaking Practice')).toBeVisible();
 });
 
@@ -103,37 +123,43 @@ test('admin reschedules a class and the new time appears to an entitled student'
   await page.goto('/admin/liveclasses');
 
   const title = `E2E Time Change Class ${Date.now()}`;
+  const original = daysFromNow(10);
+  const moved = daysFromNow(15);
+  const short = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   await page.getByRole('button', { name: 'Schedule Class', exact: true }).click();
   const createDialog = page.getByRole('dialog');
   await createDialog.getByLabel('Program').click();
   await page.getByRole('option', { name: 'TCF Exam Preparation' }).click();
   await createDialog.getByLabel('Title').fill(title);
   await createDialog.getByLabel('Instructor').fill('Test Instructor');
-  await createDialog.getByLabel('Start date').fill('2026-10-10');
+  await createDialog.getByLabel('Start date').fill(original.input);
   await createDialog.getByLabel('Start time').fill('10:00');
-  await createDialog.getByLabel('End date').fill('2026-10-10');
+  await createDialog.getByLabel('End date').fill(original.input);
   await createDialog.getByLabel('End time').fill('11:00');
   await createDialog.getByRole('button', { name: 'Schedule Class', exact: true }).click();
   await expect(page.getByText(title)).toBeVisible();
 
   await page.getByLabel(`Edit ${title}`).click();
   const editDialog = page.getByRole('dialog');
-  await editDialog.getByLabel('Start date').fill('2026-10-15');
+  await editDialog.getByLabel('Start date').fill(moved.input);
   await editDialog.getByLabel('Start time').fill('14:00');
-  await editDialog.getByLabel('End date').fill('2026-10-15');
+  await editDialog.getByLabel('End date').fill(moved.input);
   await editDialog.getByLabel('End time').fill('15:00');
   await editDialog.getByRole('button', { name: 'Save' }).click();
 
   const card = page.locator('[data-slot="card"]', { hasText: title });
   await expect(card.getByText('rescheduled')).toBeVisible();
-  await expect(card).toContainText('Oct 15, 2026');
+  await expect(card).toContainText(
+    moved.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  );
 
   await page.context().clearCookies();
   await signIn(page, 'aisha.bello@example.com', 'student1234');
   await page.goto('/dashboard/liveclasses');
   const studentCard = page.locator('[data-slot="card"]', { hasText: title });
   await expect(studentCard).toContainText('Rescheduled');
-  await expect(studentCard).not.toContainText('Oct 10');
+  await expect(studentCard).toContainText(short(moved.date));
+  await expect(studentCard).not.toContainText(short(original.date));
 });
 
 test('admin cancels a class with a custom reason; student sees the cancelled state and no Join action', async ({ page }) => {

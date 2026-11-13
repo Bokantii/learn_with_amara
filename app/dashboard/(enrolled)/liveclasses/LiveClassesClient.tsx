@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Video, Calendar, Clock, User, ExternalLink, Ban } from "lucide-react";
 import { DEFAULT_MEETING_URL, CANCELLATION_REASON_LABEL, type CancellationReason } from "@/lib/liveclass";
+import { partitionLiveClasses } from "@/lib/live-class-tabs";
+import { LocalClassTime } from "@/components/LocalClassTime";
 
 interface LiveClassRow {
   id: string;
@@ -23,23 +25,20 @@ interface LiveClassRow {
   rescheduledAt: string | null;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+function durationMinutes(startsAt: string, endsAt: string) {
+  return Math.round((new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000);
 }
 
-function formatTimeRange(startsAt: string, endsAt: string) {
-  const start = new Date(startsAt);
-  const end = new Date(endsAt);
-  const startStr = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const endStr = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const minutes = Math.round((end.getTime() - start.getTime()) / 60000);
-  return `${startStr} – ${endStr} (${minutes} min)`;
-}
-
-export default function LiveClassesClient({ liveClasses }: { liveClasses: LiveClassRow[] }) {
-  const upcoming = liveClasses.filter((c) => c.status === "SCHEDULED");
-  const cancelled = liveClasses.filter((c) => c.status === "CANCELLED");
-  const past = liveClasses.filter((c) => c.status === "COMPLETED");
+// Dates and times render in the viewer's own time zone, with its abbreviation
+// (components/LocalClassTime.tsx — hydration-safe).
+export default function LiveClassesClient({
+  liveClasses,
+  nowIso,
+}: {
+  liveClasses: LiveClassRow[];
+  nowIso: string;
+}) {
+  const { upcoming, past, cancelled } = partitionLiveClasses(liveClasses, new Date(nowIso));
 
   return (
     <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
@@ -86,11 +85,14 @@ export default function LiveClassesClient({ liveClasses }: { liveClasses: LiveCl
                   <div className="space-y-1.5 md:space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600">
                       <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-500 flex-shrink-0" />
-                      <span>{formatDate(c.startsAt)}</span>
+                      <span><LocalClassTime startsAt={c.startsAt} variant="shortDate" /></span>
                     </div>
                     <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600">
                       <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-500 flex-shrink-0" />
-                      <span>{formatTimeRange(c.startsAt, c.endsAt)}</span>
+                      <span>
+                        <LocalClassTime startsAt={c.startsAt} endsAt={c.endsAt} variant="time" />{" "}
+                        ({durationMinutes(c.startsAt, c.endsAt)} min)
+                      </span>
                     </div>
                     <div className="text-xs md:text-sm text-slate-500">
                       {c.programName}{c.groupName ? ` · ${c.groupName}` : ""}
@@ -133,14 +135,20 @@ export default function LiveClassesClient({ liveClasses }: { liveClasses: LiveCl
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span>{formatDate(c.startsAt)}</span>
+                            <span><LocalClassTime startsAt={c.startsAt} variant="shortDate" /></span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 text-xs flex-shrink-0">
-                      Completed
-                    </Badge>
+                    {c.pastKind === "completed" ? (
+                      <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 text-xs flex-shrink-0">
+                        Completed
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-amber-50 text-amber-700 hover:bg-amber-50 text-xs flex-shrink-0">
+                        Ended
+                      </Badge>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -166,7 +174,7 @@ export default function LiveClassesClient({ liveClasses }: { liveClasses: LiveCl
                       </div>
                       <div className="flex items-center gap-2 text-xs md:text-sm text-slate-600 mt-1.5">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>{formatDate(c.startsAt)}</span>
+                        <span><LocalClassTime startsAt={c.startsAt} variant="shortDate" /></span>
                       </div>
                       {(c.cancellationReason || c.cancellationMessage) && (
                         <p className="text-xs md:text-sm text-red-600 mt-2">

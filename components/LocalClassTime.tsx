@@ -14,14 +14,17 @@ import { PRIMARY_CLASS_TIME_ZONE } from '@/lib/class-time';
 type Props = {
   startsAt: string;
   endsAt?: string;
-  /** 'date' → "Thursday, November 12, 2026"; 'time' → "9:00 PM – 10:30 PM GMT+1"; 'dateTime' → both, short date. */
-  variant: 'date' | 'time' | 'dateTime';
+  /** 'date' → "Thursday, November 12, 2026"; 'shortDate' → "Thu, Nov 12"; 'time' → "9:00 PM – 10:30 PM GMT+1"; 'dateTime' → both, short date. */
+  variant: 'date' | 'shortDate' | 'time' | 'dateTime';
 };
 
 function format(startsAt: Date, endsAt: Date | null, variant: Props['variant'], timeZone?: string): string {
   const opts = timeZone ? { timeZone } : {};
   if (variant === 'date') {
     return startsAt.toLocaleDateString('en-US', { ...opts, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  if (variant === 'shortDate') {
+    return startsAt.toLocaleDateString('en-US', { ...opts, weekday: 'short', month: 'short', day: 'numeric' });
   }
   const time = (d: Date, withZone: boolean) =>
     d.toLocaleTimeString('en-US', { ...opts, hour: 'numeric', minute: '2-digit', ...(withZone ? { timeZoneName: 'short' } : {}) });
@@ -38,7 +41,7 @@ export function LocalClassTime({ startsAt, endsAt, variant }: Props) {
   const end = endsAt ? new Date(endsAt) : null;
   const primary = PRIMARY_CLASS_TIME_ZONE;
   const fallback =
-    format(start, end, variant, primary.timeZone) + (variant === 'date' ? '' : ` (${primary.label})`);
+    format(start, end, variant, primary.timeZone) + (variant === 'date' || variant === 'shortDate' ? '' : ` (${primary.label})`);
 
   // false during SSR and hydration (so the first client render matches the
   // server HTML), true afterwards — then the browser's own zone is used.
