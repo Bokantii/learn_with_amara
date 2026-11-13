@@ -227,3 +227,9 @@ html {
     height: 0;
   }
 }
+
+/* Indeterminate progress bar for file uploads (assignment submission). */
+@keyframes upload-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}

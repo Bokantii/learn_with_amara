@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Card } from "../../../../components/ui/card";
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
-import { Label } from "../../../../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "../../../../components/ui/dialog";
 import {
   ClipboardList, Clock, CheckCircle2, AlertCircle, Calendar, Hourglass, Paperclip,
 } from "lucide-react";
-import { submitAssignmentAction } from "./actions";
+import SubmitAssignmentDialog from "./SubmitAssignmentDialog";
 
 type Priority = "high" | "medium" | "low";
 
@@ -55,25 +49,7 @@ export default function AssignmentsClient({
   pending: PendingAssignment[];
   submitted: SubmittedAssignment[];
 }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [submitTarget, setSubmitTarget] = useState<PendingAssignment | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    const formData = new FormData(e.currentTarget);
-    startTransition(async () => {
-      const result = await submitAssignmentAction(formData);
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      setSubmitTarget(null);
-      router.refresh();
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -238,31 +214,7 @@ export default function AssignmentsClient({
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!submitTarget} onOpenChange={(open) => !open && setSubmitTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Submit: {submitTarget?.title}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="hidden" name="assignmentId" value={submitTarget?.id ?? ""} />
-            <div className="space-y-2">
-              <Label htmlFor="file">Upload your work</Label>
-              <Input id="file" name="file" type="file" required />
-              <p className="text-xs text-muted-foreground">PDF, document, image, or audio file.</p>
-            </div>
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-            <DialogFooter>
-              <Button type="submit" className="bg-sky-600 hover:bg-sky-700" disabled={isPending}>
-                {isPending ? "Uploading..." : "Submit Assignment"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <SubmitAssignmentDialog target={submitTarget} onClose={() => setSubmitTarget(null)} />
     </div>
   );
 }
