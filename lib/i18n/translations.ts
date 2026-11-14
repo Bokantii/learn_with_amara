@@ -118,7 +118,7 @@ export const translations: Record<
       communityTagline: 'A growing community of language learners',
       tracks: 'Learning Tracks',
       examConfidence: 'Focused prep for TCF, TEF, DELF & DALF',
-      imageAlt: 'Adults learning French online on laptops and tablets, preparing for the TCF, TEF, DELF, and DALF exams',
+      imageAlt: 'ICLP instructor Amara teaching a French class at a whiteboard',
     },
     placementCallout: {
       heading: 'Test Your French Level — Free',
@@ -295,7 +295,7 @@ export const translations: Record<
       communityTagline: "Une communauté grandissante d'apprenants en langues",
       tracks: "Parcours d'apprentissage",
       examConfidence: 'Préparation ciblée au TCF, TEF, DELF et DALF',
-      imageAlt: 'Adultes apprenant le français en ligne sur ordinateurs portables et tablettes, en préparation aux examens TCF, TEF, DELF et DALF',
+      imageAlt: 'Amara, formatrice ICLP, enseignant le français au tableau devant une classe',
     },
     placementCallout: {
       heading: 'Évaluez votre niveau de français — gratuitement',

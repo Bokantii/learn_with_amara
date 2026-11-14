@@ -12,7 +12,8 @@ import {
 import { GraduationCap, Users, BadgeCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { CountUp } from './CountUp';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import Image from 'next/image';
+import amaraTeaching from '../assets/lecon-de-francais.png';
 import { useLanguage } from '../lib/i18n/LanguageContext';
 import { translations } from '../lib/i18n/translations';
 
@@ -32,108 +33,130 @@ export function Hero() {
   const { language } = useLanguage();
   const copy = translations[language].hero;
 
-  // Gentle parallax on the decorative blobs only; disabled for reduced motion.
+  // The second sentence of the title is set in the brand gradient. Split on the
+  // first ". " so both locales work without extra translation keys.
+  const splitAt = copy.title.indexOf('. ');
+  const titleLead = splitAt === -1 ? copy.title : copy.title.slice(0, splitAt + 1);
+  const titleHighlight = splitAt === -1 ? '' : copy.title.slice(splitAt + 2);
+
+  // Gentle parallax on the photo only; disabled for reduced motion.
   const sectionRef = useRef<HTMLElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] });
-  const blobUp = useTransform(scrollYProgress, [0, 1], [0, shouldReduceMotion ? 0 : -80]);
-  const blobDown = useTransform(scrollYProgress, [0, 1], [0, shouldReduceMotion ? 0 : 80]);
+  const photoY = useTransform(scrollYProgress, [0, 1], [0, shouldReduceMotion ? 0 : -40]);
 
   return (
     <MotionConfig reducedMotion="user">
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-white to-cyan-50"
+      className="relative overflow-hidden bg-white lg:flex lg:min-h-[640px] lg:items-center"
     >
-      <div className="container mx-auto px-4 lg:px-8 py-12 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          {/* Text Content */}
-          <motion.div
-            className="space-y-6 lg:space-y-8"
-            variants={textContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.h1 variants={textItem} className="text-4xl lg:text-5xl xl:text-6xl tracking-tight">
-              {copy.title}
-            </motion.h1>
-            <motion.p variants={textItem} className="text-lg lg:text-xl text-muted-foreground max-w-2xl">
-              {copy.subtitle}
-            </motion.p>
-            <motion.div variants={textItem} className="flex flex-col sm:flex-row gap-4">
-              <Button
-                size="lg"
-                className="bg-accent hover:bg-accent/90 text-lg px-8 py-6"
-                asChild
-              >
-                <Link href="/Pricing">{copy.getStarted}</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-6 border-2"
-                asChild
-              >
-                <Link href="/Courses">{copy.exploreCourses}</Link>
-              </Button>
-            </motion.div>
-            <motion.div variants={textItem}>
-              <Link
-                href="/assessments/placement"
-                className="inline-block text-sm font-medium text-sky-600 hover:text-sky-700 hover:underline"
-              >
-                {copy.testLevel}
-              </Link>
-            </motion.div>
-            <motion.ul variants={textItem} className="mt-2 grid list-none gap-px overflow-hidden rounded-2xl border border-sky-100 bg-sky-100/70 p-0 shadow-sm sm:grid-cols-3">
-              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                  <GraduationCap className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span className="text-sm leading-snug text-muted-foreground">
-                  <CountUp end={4} duration={1} className="text-lg font-semibold text-primary" /> {copy.tracks}
-                </span>
-              </li>
-              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                  <Users className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span className="text-sm leading-snug text-muted-foreground">{copy.communityTagline}</span>
-              </li>
-              <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                  <BadgeCheck className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span className="text-sm leading-snug text-muted-foreground">{copy.examConfidence}</span>
-              </li>
-            </motion.ul>
-          </motion.div>
+      {/* Soft brand glow behind the text */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-sky-100/70 blur-3xl"
+      />
 
-          {/* Image */}
-          <div className="relative">
-            <motion.div
-              className="relative rounded-2xl overflow-hidden shadow-2xl"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: EASE, delay: 0.2 }}
+      {/* Photo: full-width banner on small screens, full-bleed right side on desktop */}
+      <motion.div
+        className="relative h-80 overflow-hidden sm:h-96 lg:absolute lg:inset-y-0 lg:right-0 lg:h-auto lg:w-[56%]"
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, ease: EASE }}
+      >
+        <motion.div style={{ y: photoY }} className="absolute inset-x-0 top-0 -bottom-12">
+          {/* Previous hero image (Unsplash, revert target):
+              https://images.unsplash.com/photo-1653669487404-09c3617c2b6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaXZlcnNlJTIwcGVvcGxlJTIwbGVhcm5pbmclMjBvbmxpbmUlMjBsYXB0b3B8ZW58MXx8fHwxNzU5NzU4OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral */}
+          <Image
+            src={amaraTeaching}
+            alt={copy.imageAlt}
+            placeholder="blur"
+            priority
+            fill
+            sizes="(max-width: 1024px) 100vw, 56vw"
+            className="object-cover object-[40%_25%] lg:object-[42%_30%]"
+          />
+        </motion.div>
+        {/* Fades: into the text on the left (desktop) and into the page below */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 hidden bg-gradient-to-r from-white via-white/70 via-15% to-transparent to-40% lg:block"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/70 to-transparent lg:h-24 lg:via-transparent"
+        />
+      </motion.div>
+
+      <div className="container relative z-10 mx-auto -mt-6 px-4 pb-12 lg:mt-0 lg:px-8 lg:py-24">
+        <motion.div
+          className="max-w-xl space-y-6 lg:max-w-[56%] lg:space-y-8 xl:max-w-[46%]"
+          variants={textContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1 variants={textItem} className="text-4xl lg:text-5xl xl:text-6xl tracking-tight">
+            {titleLead}
+            {titleHighlight && (
+              <>
+                {' '}
+                <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                  {titleHighlight}
+                </span>
+              </>
+            )}
+          </motion.h1>
+          <motion.p variants={textItem} className="text-lg lg:text-xl text-muted-foreground max-w-2xl">
+            {copy.subtitle}
+          </motion.p>
+          <motion.div variants={textItem} className="flex flex-col sm:flex-row gap-4">
+            <Button
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-lg px-8 py-6"
+              asChild
             >
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1653669487404-09c3617c2b6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaXZlcnNlJTIwcGVvcGxlJTIwbGVhcm5pbmclMjBvbmxpbmUlMjBsYXB0b3B8ZW58MXx8fHwxNzU5NzU4OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                alt={copy.imageAlt}
-                className="w-full h-auto aspect-[4/3] object-cover"
-              />
-            </motion.div>
-            {/* Floating Elements */}
-            <motion.div
-              style={{ y: blobUp }}
-              className="absolute -top-4 -right-4 w-24 h-24 bg-accent rounded-2xl opacity-20 blur-2xl"
-            />
-            <motion.div
-              style={{ y: blobDown }}
-              className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary rounded-2xl opacity-20 blur-2xl"
-            />
-          </div>
-        </div>
+              <Link href="/Pricing">{copy.getStarted}</Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-lg px-8 py-6 border-2"
+              asChild
+            >
+              <Link href="/Courses">{copy.exploreCourses}</Link>
+            </Button>
+          </motion.div>
+          <motion.div variants={textItem}>
+            <Link
+              href="/assessments/placement"
+              className="inline-block text-sm font-medium text-sky-600 hover:text-sky-700 hover:underline"
+            >
+              {copy.testLevel}
+            </Link>
+          </motion.div>
+          <motion.ul variants={textItem} className="mt-2 grid list-none gap-px overflow-hidden rounded-2xl border border-sky-100 bg-sky-100/70 p-0 shadow-sm sm:grid-cols-3">
+            <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <GraduationCap className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-sm leading-snug text-muted-foreground">
+                <CountUp end={4} duration={1} className="text-lg font-semibold text-primary" /> {copy.tracks}
+              </span>
+            </li>
+            <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <Users className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-sm leading-snug text-muted-foreground">{copy.communityTagline}</span>
+            </li>
+            <li className="flex items-center gap-3 bg-white/80 px-4 py-4 backdrop-blur-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <BadgeCheck className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="text-sm leading-snug text-muted-foreground">{copy.examConfidence}</span>
+            </li>
+          </motion.ul>
+        </motion.div>
       </div>
     </section>
     </MotionConfig>
