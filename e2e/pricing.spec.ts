@@ -75,7 +75,7 @@ test('naira prices route enrollment to the Nigeria WhatsApp line', async ({ page
 
 test('checkout fallback offers the pre-filled WhatsApp chat for the chosen plan', async ({ page }) => {
   await page.goto('/SignIn');
-  await page.getByLabel('Email').fill('demo@iclp.com');
+  await page.getByLabel('Email').fill('demo@example.com');
   await page.getByLabel('Password', { exact: true }).fill('demo1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);

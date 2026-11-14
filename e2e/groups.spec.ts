@@ -11,7 +11,7 @@ test('admin sees seeded groups with correct member counts', async ({ page }) => 
   // Scoped to each seeded group's own card rather than a page-wide text search, so this
   // doesn't assume the dev DB contains only these two groups — other groups created through
   // manual testing may coexist without affecting this assertion.
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/groups');

@@ -7,10 +7,10 @@ async function main() {
   const adminPasswordHash = await bcrypt.hash('admin1234', 10);
 
   await prisma.user.upsert({
-    where: { email: 'demo@iclp.com' },
+    where: { email: 'demo@example.com' },
     update: {},
     create: {
-      email: 'demo@iclp.com',
+      email: 'demo@example.com',
       name: 'Demo Student',
       passwordHash: studentPasswordHash,
       role: 'STUDENT',
@@ -19,10 +19,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin@iclp.com' },
+    where: { email: 'admin@example.com' },
     update: {},
     create: {
-      email: 'admin@iclp.com',
+      email: 'admin@example.com',
       name: 'Admin User',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
@@ -31,10 +31,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'instructor@iclp.com' },
+    where: { email: 'instructor@example.com' },
     update: { role: 'INSTRUCTOR' },
     create: {
-      email: 'instructor@iclp.com',
+      email: 'instructor@example.com',
       name: 'Instructor User',
       passwordHash: adminPasswordHash,
       role: 'INSTRUCTOR',
@@ -242,7 +242,7 @@ async function main() {
   // ─── Payments (Phase 2 Task 9) ─────────────────────────────────────────
   // Real manual payment records recorded by the admin, each linked to the
   // enrollment it settles. No fabricated invoices / due dates / card data.
-  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@iclp.com' } });
+  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@example.com' } });
   const paymentSeeds = [
     { studentEmail: 'aisha.bello@example.com', track: 'tcf-exam-prep', amountCents: 30000, currency: 'cad', method: 'Bank transfer', reference: 'ICLP-2026-0142', paidAt: new Date('2026-01-14') },
     { studentEmail: 'elena.rossi@example.com', track: 'delf-dalf-track', amountCents: 30000, currency: 'cad', method: 'Interac e-Transfer', reference: 'ICLP-2026-0173', paidAt: new Date('2026-01-22') },
@@ -510,7 +510,7 @@ async function main() {
   // Authored admin communication — no fake engagement metrics, no seeded
   // Notification rows (those are created on publish; the student feed reads
   // announcements directly).
-  const adminId = (await prisma.user.findUnique({ where: { email: 'admin@iclp.com' } }))!.id;
+  const adminId = (await prisma.user.findUnique({ where: { email: 'admin@example.com' } }))!.id;
   const announcementSeeds: {
     title: string;
     body: string;
@@ -782,7 +782,7 @@ async function main() {
     }
   }
 
-  console.log('Seeded demo@iclp.com (student), admin@iclp.com (admin), instructor@iclp.com (instructor), 5 programs, 7 students, 2 groups, 6 assignments (1 group-scoped), 7 submissions (3 graded), 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed), 1 published placement assessment (24 French single-choice questions, A1–C1), 8 students (1 PENDING/unpaid billing fixture), 3 manual payments, 4 announcements (3 published, 1 draft), lifecycle fixtures: invited.student@example.com + invited.instructor@example.com (outstanding invites), archived.student@example.com (deactivated, with a graded submission + payment kept on file).');
+  console.log('Seeded demo@example.com (student), admin@example.com (admin), instructor@example.com (instructor), 5 programs, 7 students, 2 groups, 6 assignments (1 group-scoped), 7 submissions (3 graded), 1 module, 3 lessons (2 published, 1 draft), 1 lesson resource, 4 live classes (1 program-level, 1 group-level, 1 cancelled, 1 completed), 1 published placement assessment (24 French single-choice questions, A1–C1), 8 students (1 PENDING/unpaid billing fixture), 3 manual payments, 4 announcements (3 published, 1 draft), lifecycle fixtures: invited.student@example.com + invited.instructor@example.com (outstanding invites), archived.student@example.com (deactivated, with a graded submission + payment kept on file).');
 }
 
 const refusal = seedRefusalReason(process.env);

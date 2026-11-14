@@ -2,7 +2,7 @@
  * Safety check for `prisma/seed.ts` (SPEC Known Deferred Issue #33e).
  *
  * The seed creates demo accounts with well-known passwords (e.g.
- * admin@iclp.com / admin1234) and fake academic/billing records, so it must
+ * admin@example.com / admin1234) and fake academic/billing records, so it must
  * never run against the production database (CLAUDE.md §5, docs/LAUNCH_GATE.md
  * "never seed production").
  *

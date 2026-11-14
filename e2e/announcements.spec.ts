@@ -8,7 +8,7 @@ import { test, expect, type Page } from '@playwright/test';
  * record. Publishing an assignment, grading one, and changing an enrollment each
  * also produce an in-app notification.
  *
- * Seeded fixtures: admin@iclp.com; aisha.bello (TCF, group g1); noah.park (TCF,
+ * Seeded fixtures: admin@example.com; aisha.bello (TCF, group g1); noah.park (TCF,
  * not g1); elena.rossi (DELF); lucas.martin (TCF, g1); pending.pay (PENDING
  * only — not a NOTIFY-status student). Seeded published announcements:
  * "Welcome to the new ICLP dashboard" (ALL), "TCF Exam Preparation: revised
@@ -87,7 +87,7 @@ test.describe('student announcement feed targeting', () => {
 test.describe('admin publish + notification', () => {
   test('an ALL announcement reaches every student and rings the bell', async ({ page }) => {
     const title = `All-hands ${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await createAndPublish(page, { title, body: 'Everyone should see this.' });
 
     await page.context().clearCookies();
@@ -109,7 +109,7 @@ test.describe('admin publish + notification', () => {
 
   test('a GROUP announcement reaches current members only', async ({ page }) => {
     const title = `Cohort note ${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await createAndPublish(page, {
       title,
       body: 'Morning cohort only.',
@@ -132,7 +132,7 @@ test.describe('admin publish + notification', () => {
     page,
   }) => {
     const title = `Temporary notice ${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await createAndPublish(page, { title, body: 'This will be archived.' });
 
     const row = page.getByRole('row', { name: new RegExp(title) });
@@ -166,7 +166,7 @@ test('publishing an assignment produces an in-app notification for enrolled stud
   const name = `E2E Assignment ${Date.now()}`;
 
   // Admin creates a TCF assignment (fires "assignment published").
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/assignments');
   await page.getByRole('button', { name: 'Create Assignment' }).first().click();
   const create = page.getByRole('dialog');
@@ -203,7 +203,7 @@ test('grading an assignment produces an in-app notification for that student', a
   // the test skips with a reseed hint.
   const title = 'HSK3 Character Writing Set 1';
 
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/grading');
   const gradeCard = page
     .locator('[data-slot="card"]')
@@ -229,11 +229,11 @@ test('grading an assignment produces an in-app notification for that student', a
 
 test('an enrollment change produces an in-app notification', async ({ page, context }) => {
   // david.kim (Business Spanish, PAUSED) — toggle ACTIVE then restore to PAUSED.
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
 
   const setStatus = async (target: 'active' | 'paused') => {
     await context.clearCookies();
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/students');
     await page
       .getByRole('row', { name: /david\.kim@example\.com/ })

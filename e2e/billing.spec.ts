@@ -123,7 +123,7 @@ test.describe('enrollment lifecycle + access', () => {
   test('the admin status control only offers legal transitions for a PENDING enrollment', async ({
     page,
   }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/students');
     await page
       .getByRole('row', { name: /pending\.pay@example\.com/ })
@@ -146,7 +146,7 @@ test.describe('enrollment lifecycle + access', () => {
 
   test('admin records a manual payment and the student sees it', async ({ page, context }) => {
     const reference = `E2E-${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/payments');
 
     await page.getByRole('button', { name: 'Record Payment' }).click();
@@ -178,7 +178,7 @@ test.describe('enrollment lifecycle + access', () => {
     // Toggle david.kim (Business Spanish) PAUSED -> ACTIVE, verify access, then always restore.
     const setStatus = async (target: 'active' | 'paused') => {
       await context.clearCookies();
-      await signIn(page, 'admin@iclp.com', 'admin1234');
+      await signIn(page, 'admin@example.com', 'admin1234');
       await page.goto('/admin/students');
       await page
         .getByRole('row', { name: /david\.kim@example\.com/ })

@@ -35,7 +35,7 @@ test('student cannot access admin live class management', async ({ page }) => {
 });
 
 test('admin creates a Program-level live class', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/liveclasses');
@@ -58,7 +58,7 @@ test('admin creates a Program-level live class', async ({ page }) => {
 });
 
 test('admin creates a Group-level live class', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/liveclasses');
@@ -119,7 +119,7 @@ test('group-level class is visible to group members only, not a same-program non
 });
 
 test('admin reschedules a class and the new time appears to an entitled student', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/liveclasses');
 
   const title = `E2E Time Change Class ${Date.now()}`;
@@ -163,7 +163,7 @@ test('admin reschedules a class and the new time appears to an entitled student'
 });
 
 test('admin cancels a class with a custom reason; student sees the cancelled state and no Join action', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/liveclasses');
 
   const title = `E2E Cancel Class ${Date.now()}`;
@@ -203,7 +203,7 @@ test('admin cancels a class with a custom reason; student sees the cancelled sta
 });
 
 test('admin marks a class completed; it remains historical, not deleted', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/liveclasses');
 
   const title = `E2E Complete Class ${Date.now()}`;
@@ -227,7 +227,7 @@ test('admin marks a class completed; it remains historical, not deleted', async 
 });
 
 test('meeting URL is withheld from unauthorized students and from a cancelled class', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/liveclasses');
 
   const title = `E2E Meeting URL Class ${Date.now()}`;
@@ -256,7 +256,7 @@ test('meeting URL is withheld from unauthorized students and from a cancelled cl
 
   // Entitled to the program, but the class is cancelled — URL must still never render.
   await page.context().clearCookies();
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/liveclasses');
   await page.getByLabel(`Cancel ${title}`).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel Class' }).click();

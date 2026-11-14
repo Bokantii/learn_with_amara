@@ -78,7 +78,7 @@ test.describe('live class reminder scheduler', () => {
   });
 
   test('reminder is not sent for a class outside the due window', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 180 });
 
     await triggerReminderScan(page);
@@ -89,7 +89,7 @@ test.describe('live class reminder scheduler', () => {
   });
 
   test('reminder is sent to entitled program-level recipients when due; unrelated-program student is excluded', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 });
 
     await triggerReminderScan(page);
@@ -117,7 +117,7 @@ test.describe('live class reminder scheduler', () => {
   });
 
   test('group-level reminder reaches only current group members, not a same-program non-member', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60, groupName: 'TCF Morning Cohort' });
 
     await triggerReminderScan(page);
@@ -138,7 +138,7 @@ test.describe('live class reminder scheduler', () => {
   });
 
   test('a cancelled class never generates a normal reminder', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 });
     await page.getByLabel(`Cancel ${title}`).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Cancel Class' }).click();
@@ -158,7 +158,7 @@ test.describe('live class reminder scheduler', () => {
   });
 
   test('duplicate scheduler invocations do not duplicate a delivery', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 });
 
     await triggerReminderScan(page, 3);
@@ -173,7 +173,7 @@ test.describe('live class reminder scheduler', () => {
 
 test.describe('cancellation and reschedule communication', () => {
   test('admin cancellation creates a cancellation notification with the custom message, reaching enrolled students', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 * 24 * 30 });
 
     const customMessage = 'Cancelled for notification E2E coverage.';
@@ -195,7 +195,7 @@ test.describe('cancellation and reschedule communication', () => {
   });
 
   test('admin reschedule creates a reschedule notification for currently enrolled students', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 * 24 * 30 });
 
     await page.getByLabel(`Edit ${title}`).click();
@@ -219,7 +219,7 @@ test.describe('cancellation and reschedule communication', () => {
   });
 
   test('cancelling with "notify students" unchecked persists the cancellation but sends nothing', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(page, { minutesFromNow: 60 * 24 * 30 });
 
     await page.getByLabel(`Cancel ${title}`).click();
@@ -266,7 +266,7 @@ test.describe('in-app notification bell', () => {
   });
 
   test('admin bell shows a truthful empty or real state without error', async ({ page }) => {
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin');
 
     await openBell(page);

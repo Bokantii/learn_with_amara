@@ -9,7 +9,7 @@ async function signIn(page: import('@playwright/test').Page, email: string, pass
 }
 
 async function goToTcfProgramContent(page: import('@playwright/test').Page) {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
   await page.goto('/admin/programs');
   await page.getByLabel('Manage content for TCF Exam Preparation').click();

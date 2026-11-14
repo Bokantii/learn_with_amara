@@ -3,7 +3,7 @@
 // that stays demo/dev-only data (CLAUDE.md §5).
 //
 // Usage:
-//   ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@iclp.com" ADMIN_PASSWORD="..." npm run create-admin
+//   ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@example.com" ADMIN_PASSWORD="..." npm run create-admin
 //
 // Safe by construction:
 //   - refuses to run without all three values, or with a password under 8 chars
@@ -28,7 +28,7 @@ async function main() {
   if (!name || !email || !password) {
     console.error(
       'Missing required environment variables.\n' +
-        'Usage: ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@iclp.com" ADMIN_PASSWORD="..." npm run create-admin'
+        'Usage: ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@example.com" ADMIN_PASSWORD="..." npm run create-admin'
     );
     process.exitCode = 1;
     return;

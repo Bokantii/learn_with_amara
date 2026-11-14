@@ -61,7 +61,7 @@ no drift, then drop the scratch database.
 ## 3. First admin account
 
 ```bash
-ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@iclp.com" ADMIN_PASSWORD="a-real-password" npm run create-admin
+ADMIN_NAME="Jane Doe" ADMIN_EMAIL="jane@example.com" ADMIN_PASSWORD="a-real-password" npm run create-admin
 ```
 
 Run once, against the production database (`prisma/create-admin.ts`). Refuses to run without
@@ -98,7 +98,7 @@ header comment for why, versus native Vercel Cron). To activate it:
 2. GitHub repo → Settings → Secrets and variables → Actions → **Secrets** → add `CRON_SECRET`
    with that same value.
 3. GitHub repo → Settings → Secrets and variables → Actions → **Variables** → add `APP_URL` set
-   to the production origin (e.g. `https://app.iclp.com`).
+   to the production origin (e.g. `https://iclanguages.com`).
 4. Confirm `RESEND_API_KEY` is set and `EMAIL_FROM` is on a domain verified in Resend — reminders
    (and every other transactional email) silently no-op otherwise (truthful `SKIPPED`, not a
    crash — but nothing is delivered).

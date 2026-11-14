@@ -22,7 +22,7 @@ Built with Next.js (App Router), PostgreSQL via Prisma, NextAuth, Stripe, Resend
    ```
    Open [http://localhost:3000](http://localhost:3000).
 
-Seeded accounts: `admin@iclp.com` / `admin1234` (admin) and `demo@iclp.com` / `demo1234` (student).
+Seeded accounts: `admin@example.com` / `admin1234` (admin) and `demo@example.com` / `demo1234` (student).
 
 ## Scripts
 

@@ -10,7 +10,7 @@ import { test, expect, type Page } from '@playwright/test';
  *
  * Each test schedules its own class through the real admin UI so `startsAt`
  * can be relative to "now". Requires the seeded users (see prisma/seed.ts):
- * admin@iclp.com, instructor@iclp.com, aisha.bello@example.com (tcf + morning
+ * admin@example.com, instructor@example.com, aisha.bello@example.com (tcf + morning
  * cohort), noah.park@example.com (tcf, not in the cohort), marcus.chen@example.com
  * (tef only), pending.pay@example.com (tcf, PENDING).
  */
@@ -86,7 +86,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('admin starts a session, QR + live count render; entitled student checks in PRESENT', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -108,7 +108,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('checking in well after the class start is recorded LATE', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     // Start time 20 min ago → beyond the 10-min PRESENT window.
     const title = await scheduleClass(adminPage, { minutesFromNow: -20, durationMinutes: 90 });
     await openManage(adminPage, title);
@@ -129,7 +129,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('unauthenticated scan redirects to sign-in and resumes on the check-in page', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -152,7 +152,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('a second check-in with the same token is rejected as already checked in', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -175,7 +175,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('a student enrolled in a different program cannot check in', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -194,7 +194,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('a student whose enrollment in the class program is still PENDING cannot check in', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -213,7 +213,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('group-scoped class: a cohort member checks in, a same-program non-member is rejected', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2, groupName: 'TCF Morning Cohort' });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -240,7 +240,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('closing the session rejects a subsequent check-in with the generic message', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -261,7 +261,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('starting a new session invalidates the previous token', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const firstPath = await startAndGetCheckInPath(adminPage);
@@ -290,7 +290,7 @@ test.describe('QR attendance — staff session + student check-in', () => {
   test('a class cancelled after the session opened rejects a pending check-in', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -316,7 +316,7 @@ test.describe('QR attendance — roster, override, history, isolation', () => {
   test('roster shows PRESENT for a check-in and computed ABSENT for a no-show; override to EXCUSED sticks', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: -30, durationMinutes: 20 }); // already ended
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -356,7 +356,7 @@ test.describe('QR attendance — roster, override, history, isolation', () => {
   test('a student only sees their own attendance history', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: -30, durationMinutes: 20 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -399,7 +399,7 @@ test.describe('QR attendance — access control + API contract', () => {
   test('POST /api/attendance/checkin: 401 unauthenticated, 200 then 409 for a valid then replayed token', async ({ browser }) => {
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await openManage(adminPage, title);
     const checkInPath = await startAndGetCheckInPath(adminPage);
@@ -427,25 +427,25 @@ test.describe('QR attendance — access control + API contract', () => {
   });
 
   test('an INSTRUCTOR can start a session and view the roster', async ({ browser }) => {
-    // Requires the seeded instructor@iclp.com (prisma/seed.ts). Skip cleanly if
+    // Requires the seeded instructor@example.com (prisma/seed.ts). Skip cleanly if
     // the DB predates that fixture.
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await signIn(adminPage, 'admin@iclp.com', 'admin1234');
+    await signIn(adminPage, 'admin@example.com', 'admin1234');
     const title = await scheduleClass(adminPage, { minutesFromNow: 2 });
     await admin.close();
 
     const instr = await browser.newContext();
     const instrPage = await instr.newPage();
     await instrPage.goto('/SignIn');
-    await instrPage.getByLabel('Email').fill('instructor@iclp.com');
+    await instrPage.getByLabel('Email').fill('instructor@example.com');
     await instrPage.getByLabel('Password', { exact: true }).fill('admin1234');
     await instrPage.getByRole('button', { name: 'Sign In' }).click();
     const landed = await instrPage
       .waitForURL((url) => !url.pathname.startsWith('/SignIn'), { timeout: 5000 })
       .then(() => true)
       .catch(() => false);
-    test.skip(!landed, 'instructor@iclp.com not seeded — run `npx prisma db seed`');
+    test.skip(!landed, 'instructor@example.com not seeded — run `npx prisma db seed`');
 
     await instrPage.goto('/attendance/manage');
     await expect(instrPage.getByRole('heading', { name: 'Attendance' })).toBeVisible();

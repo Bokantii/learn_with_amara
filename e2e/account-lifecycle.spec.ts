@@ -7,7 +7,7 @@ import { test, expect, type Page } from '@playwright/test';
  * a deactivated account loses access immediately, mid-session included; password
  * reset and in-app password change work off the existing auth stack.
  *
- * Seeded fixtures: admin@iclp.com / admin1234; instructor@iclp.com / admin1234
+ * Seeded fixtures: admin@example.com / admin1234; instructor@example.com / admin1234
  * (INSTRUCTOR); invited.student@example.com + invited.instructor@example.com
  * (INVITED, no password); archived.student@example.com / student1234
  * (DEACTIVATED, with a graded submission "Solid work — kept on file..." and a
@@ -48,7 +48,7 @@ test('admin invites a student → single-use activation link → sign in → cha
   const email = `lifecycle.${stamp}@example.com`;
   const password = 'Activate123!';
 
-  await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
   const inviteUrl = await inviteStudent(page, `Lifecycle ${stamp}`, email);
   const invitePath = new URL(inviteUrl).pathname;
 
@@ -106,7 +106,7 @@ test('revoking a pending invite removes the account and kills its link', async (
   const stamp = Date.now();
   const email = `revoke.${stamp}@example.com`;
 
-  await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
   const inviteUrl = await inviteStudent(page, `Revoke ${stamp}`, email);
   const invitePath = new URL(inviteUrl).pathname;
 
@@ -131,7 +131,7 @@ test('a deactivated student is locked out but keeps their history; reactivation 
 
   // Normalise the shared-DB fixture to DEACTIVATED (a prior run may have left it
   // active).
-  await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
   await page.goto('/admin/students?deactivated=1');
   if (await archivedRow().getByRole('button', { name: 'Deactivate' }).count()) {
     await archivedRow().getByRole('button', { name: 'Deactivate' }).click();
@@ -144,7 +144,7 @@ test('a deactivated student is locked out but keeps their history; reactivation 
   await signIn(page, 'archived.student@example.com', 'student1234');
   await expect(page.getByText('Invalid email or password.')).toBeVisible();
 
-  await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
 
   // The archived account is hidden by default, shown behind the toggle, and its
   // graded work is still on the record.
@@ -176,7 +176,7 @@ test('a deactivated student is locked out but keeps their history; reactivation 
   } finally {
     // Restore the fixture to DEACTIVATED for the next run.
     await context.clearCookies();
-    await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+    await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/students');
     await page
       .getByRole('row', { name: /archived\.student@example\.com/ })
@@ -198,7 +198,7 @@ test('deactivating a student mid-session revokes access on the next request', as
     const email = `midsession.${stamp}@example.com`;
     const password = 'MidSession123!';
 
-    await signInExpectingSuccess(adminPage, 'admin@iclp.com', 'admin1234');
+    await signInExpectingSuccess(adminPage, 'admin@example.com', 'admin1234');
     const inviteUrl = await inviteStudent(adminPage, `Mid Session ${stamp}`, email);
     await studentPage.goto(new URL(inviteUrl).pathname);
     await studentPage.getByLabel('New password', { exact: true }).fill(password);
@@ -234,7 +234,7 @@ test('admin invites an instructor; deactivating a staff account removes privileg
   const stamp = Date.now();
   const staffEmail = `instructor.${stamp}@example.com`;
 
-  await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
 
   // Invite a fresh instructor — shows up as INVITED.
   await page.goto('/admin/staff');
@@ -249,12 +249,12 @@ test('admin invites an instructor; deactivating a staff account removes privileg
   ).toBeVisible();
 
   // Admin cannot deactivate their own account.
-  const selfRow = page.getByRole('row', { name: /admin@iclp\.com/ });
+  const selfRow = page.getByRole('row', { name: /admin@example\.com/ });
   await expect(selfRow.getByRole('button', { name: 'Deactivate' })).toBeDisabled();
 
   // Deactivate the seeded instructor → they lose access; reactivate to restore.
   await page
-    .getByRole('row', { name: /instructor@iclp\.com/ })
+    .getByRole('row', { name: /instructor@example\.com/ })
     .getByRole('button', { name: 'Deactivate' })
     .click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Deactivate' }).click();
@@ -262,24 +262,24 @@ test('admin invites an instructor; deactivating a staff account removes privileg
 
   try {
     await context.clearCookies();
-    await signIn(page, 'instructor@iclp.com', 'admin1234');
+    await signIn(page, 'instructor@example.com', 'admin1234');
     await expect(page.getByText('Invalid email or password.')).toBeVisible();
   } finally {
     await context.clearCookies();
-    await signInExpectingSuccess(page, 'admin@iclp.com', 'admin1234');
+    await signInExpectingSuccess(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/staff');
     await page
-      .getByRole('row', { name: /instructor@iclp\.com/ })
+      .getByRole('row', { name: /instructor@example\.com/ })
       .getByRole('button', { name: 'Reactivate' })
       .click();
     await expect(
-      page.getByRole('row', { name: /instructor@iclp\.com/ }).getByText('active', { exact: true })
+      page.getByRole('row', { name: /instructor@example\.com/ }).getByText('active', { exact: true })
     ).toBeVisible();
   }
 
   // Reactivated instructor can reach the attendance-management surface again.
   await context.clearCookies();
-  await signInExpectingSuccess(page, 'instructor@iclp.com', 'admin1234');
+  await signInExpectingSuccess(page, 'instructor@example.com', 'admin1234');
   await page.goto('/attendance/manage');
   await expect(page).toHaveURL(/\/attendance\/manage/);
 });

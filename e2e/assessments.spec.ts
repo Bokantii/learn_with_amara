@@ -6,7 +6,7 @@ import { test, expect, type Page } from '@playwright/test';
  * isolation, DRAFT invisibility, PRACTICE program-scoping, the free-text
  * manual-grade path, and the answer key never reaching the take flow.
  *
- * Seeded fixtures used: demo@iclp.com (student, NO enrolment), admin@iclp.com,
+ * Seeded fixtures used: demo@example.com (student, NO enrolment), admin@example.com,
  * aisha.bello@example.com (TCF), marcus.chen@example.com (TEF), and the
  * published "French Placement Test".
  */
@@ -153,7 +153,7 @@ test.describe('anonymous public placement', () => {
 
 test.describe('signed-in placement', () => {
   test('a signed-in student’s placement attempt is attached to the account and in history', async ({ page }) => {
-    await signIn(page, 'demo@iclp.com', 'demo1234');
+    await signIn(page, 'demo@example.com', 'demo1234');
     await startPlacement(page);
     await completeRunner(page);
     await expect(page.getByText('Estimated level')).toBeVisible();
@@ -163,7 +163,7 @@ test.describe('signed-in placement', () => {
   });
 
   test('resume with the saved answer on reload', async ({ page }) => {
-    await signIn(page, 'demo@iclp.com', 'demo1234');
+    await signIn(page, 'demo@example.com', 'demo1234');
     await startPlacement(page);
     const runnerUrl = page.url();
     const counter = page.getByText(/^\d+ \/ \d+$/);
@@ -180,7 +180,7 @@ test.describe('signed-in placement', () => {
   });
 
   test('a student cannot open another student’s result', async ({ page, context }) => {
-    await signIn(page, 'demo@iclp.com', 'demo1234');
+    await signIn(page, 'demo@example.com', 'demo1234');
     await startPlacement(page);
     await completeRunner(page);
     const resultUrl = page.url();
@@ -199,7 +199,7 @@ test.describe('admin authoring + practice + review', () => {
     context,
   }) => {
     const title = `E2E Practice ${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await createAssessment(page, { type: 'PRACTICE', title, program: 'TCF Exam Preparation' });
     await addSingleChoiceQuestion(page, `Q1 for ${title}`);
 
@@ -211,7 +211,7 @@ test.describe('admin authoring + practice + review', () => {
 
     // Publish it.
     await context.clearCookies();
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/assessments');
     await page
       .locator('[data-slot="card"]', { hasText: title })
@@ -238,7 +238,7 @@ test.describe('admin authoring + practice + review', () => {
     context,
   }) => {
     const title = `E2E Written ${Date.now()}`;
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await createAssessment(page, { type: 'PRACTICE', title, program: 'TCF Exam Preparation' });
 
     // one short-text question
@@ -272,7 +272,7 @@ test.describe('admin authoring + practice + review', () => {
 
     // admin grades + finalizes
     await context.clearCookies();
-    await signIn(page, 'admin@iclp.com', 'admin1234');
+    await signIn(page, 'admin@example.com', 'admin1234');
     await page.goto('/admin/assessments/review');
     await page.getByText(title).click();
     await page.waitForURL(/\/admin\/assessments\/review\/[^/]+$/);

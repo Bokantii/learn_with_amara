@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('admin grades a pending submission', async ({ page }) => {
   await page.goto('/SignIn');
-  await page.getByLabel('Email').fill('admin@iclp.com');
+  await page.getByLabel('Email').fill('admin@example.com');
   await page.getByLabel('Password', { exact: true }).fill('admin1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/admin$/);
@@ -30,7 +30,7 @@ test('admin grades a pending submission', async ({ page }) => {
 
 test('rejects a score above the assignment\'s points (Known Deferred Issue #16)', async ({ page }) => {
   await page.goto('/SignIn');
-  await page.getByLabel('Email').fill('admin@iclp.com');
+  await page.getByLabel('Email').fill('admin@example.com');
   await page.getByLabel('Password', { exact: true }).fill('admin1234');
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/admin$/);
