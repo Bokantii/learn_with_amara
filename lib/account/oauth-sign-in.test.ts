@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { GoogleProfile } from 'next-auth/providers/google';
-import { googleProfile, isOAuthSignInAllowed, type FindStatusByEmail } from './oauth-sign-in';
+import {
+  ALREADY_SIGNED_IN_REDIRECT,
+  googleProfile,
+  isOAuthSignInAllowed,
+  type FindStatusByEmail,
+} from './oauth-sign-in';
 
 const verifiedGoogle = { email_verified: true };
 
@@ -12,14 +17,14 @@ describe('isOAuthSignInAllowed', () => {
   it('allows a new user with a verified Google email', async () => {
     const find = lookup(null);
     await expect(
-      isOAuthSignInAllowed({ provider: 'google', email: 'new@gmail.com', profile: verifiedGoogle }, find)
+      isOAuthSignInAllowed({ provider: 'google', email: 'new@gmail.com', profile: verifiedGoogle, alreadySignedIn: false }, find)
     ).resolves.toBe(true);
   });
 
   it('allows a returning ACTIVE user with a verified Google email', async () => {
     await expect(
       isOAuthSignInAllowed(
-        { provider: 'google', email: 'aisha@gmail.com', profile: verifiedGoogle },
+        { provider: 'google', email: 'aisha@gmail.com', profile: verifiedGoogle, alreadySignedIn: false },
         lookup('ACTIVE')
       )
     ).resolves.toBe(true);
@@ -33,7 +38,7 @@ describe('isOAuthSignInAllowed', () => {
   ])('refuses Google when email_verified is %s', async (_label, profile) => {
     const find = lookup(null);
     await expect(
-      isOAuthSignInAllowed({ provider: 'google', email: 'victim@example.org', profile }, find)
+      isOAuthSignInAllowed({ provider: 'google', email: 'victim@example.org', profile, alreadySignedIn: false }, find)
     ).resolves.toBe(false);
     expect(find).not.toHaveBeenCalled();
   });
@@ -42,7 +47,7 @@ describe('isOAuthSignInAllowed', () => {
     const find = lookup(null);
     await expect(
       isOAuthSignInAllowed(
-        { provider: 'facebook', email: 'victim@example.org', profile: { email_verified: true } },
+        { provider: 'facebook', email: 'victim@example.org', profile: { email_verified: true }, alreadySignedIn: false },
         find
       )
     ).resolves.toBe(false);
@@ -51,30 +56,41 @@ describe('isOAuthSignInAllowed', () => {
 
   it('refuses an unknown provider', async () => {
     await expect(
-      isOAuthSignInAllowed({ provider: 'github', email: 'a@b.com', profile: verifiedGoogle }, lookup(null))
+      isOAuthSignInAllowed({ provider: 'github', email: 'a@b.com', profile: verifiedGoogle, alreadySignedIn: false }, lookup(null))
     ).resolves.toBe(false);
   });
 
   it.each([undefined, null, '', '   '])('refuses a missing email (%s)', async (email) => {
     await expect(
-      isOAuthSignInAllowed({ provider: 'google', email, profile: verifiedGoogle }, lookup(null))
+      isOAuthSignInAllowed({ provider: 'google', email, profile: verifiedGoogle, alreadySignedIn: false }, lookup(null))
     ).resolves.toBe(false);
   });
 
   it.each(['INVITED', 'DEACTIVATED'] as const)('refuses a returning %s user', async (status) => {
     await expect(
       isOAuthSignInAllowed(
-        { provider: 'google', email: 'someone@gmail.com', profile: verifiedGoogle },
+        { provider: 'google', email: 'someone@gmail.com', profile: verifiedGoogle, alreadySignedIn: false },
         lookup(status)
       )
     ).resolves.toBe(false);
+  });
+
+  it('refuses (redirects) while someone is already signed in, so Google is never linked to their account', async () => {
+    const find = lookup(null);
+    await expect(
+      isOAuthSignInAllowed(
+        { provider: 'google', email: 'stranger@gmail.com', profile: verifiedGoogle, alreadySignedIn: true },
+        find
+      )
+    ).resolves.toBe(ALREADY_SIGNED_IN_REDIRECT);
+    expect(find).not.toHaveBeenCalled();
   });
 
   it('looks the account up by trimmed, lowercased email', async () => {
     const find = lookup('DEACTIVATED');
     await expect(
       isOAuthSignInAllowed(
-        { provider: 'google', email: '  Someone@Gmail.COM ', profile: verifiedGoogle },
+        { provider: 'google', email: '  Someone@Gmail.COM ', profile: verifiedGoogle, alreadySignedIn: false },
         find
       )
     ).resolves.toBe(false);

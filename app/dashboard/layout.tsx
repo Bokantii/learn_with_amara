@@ -4,6 +4,7 @@ import { getSessionUser } from "../../lib/authz";
 import { getUnreadNotificationCount, getRecentNotifications } from "../../lib/notifications/queries";
 import { NotificationBell } from "../../components/NotificationBell";
 import NavLinks from "./NavLinks";
+import { SignOutButton } from "../../components/SignOutButton";
 
 export default async function DashboardLayout({
   children,
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
               <p className="text-xs text-slate-500">Student</p>
             </div>
           </div>
+          <SignOutButton />
         </div>
       </aside>
 

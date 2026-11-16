@@ -13,15 +13,26 @@ import Image from "next/image";
 import logo from "./../../assets/logo.png";
 import { PublicShell } from "../../components/PublicShell";
 import { oauthErrorMessage } from "../../lib/account/oauth-error-message";
+import { SignOutButton } from "../../components/SignOutButton";
 
-function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
+function OAuthErrorBanner({
+  onError,
+  onAlreadySignedIn,
+}: {
+  onError: (message: string) => void;
+  onAlreadySignedIn: (value: boolean) => void;
+}) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const message = oauthErrorMessage(searchParams.get("error"));
+    const error = searchParams.get("error");
+    const message = oauthErrorMessage(error);
     if (message) {
       onError(message);
     }
+    // A session the dashboards reject (e.g. deactivated) never shows the
+    // sidebar Sign out button, so offer it here.
+    onAlreadySignedIn(error === "AlreadySignedIn");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -65,6 +76,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+  const [alreadySignedIn, setAlreadySignedIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +112,7 @@ export default function SignIn() {
     <PublicShell>
     <div className="min-h-[80vh] flex items-center justify-center py-12 lg:py-20">
       <Suspense fallback={null}>
-        <OAuthErrorBanner onError={setError} />
+        <OAuthErrorBanner onError={setError} onAlreadySignedIn={setAlreadySignedIn} />
         <CallbackUrlReader onResolve={setCallbackUrl} />
       </Suspense>
       <div className="container mx-auto px-4 lg:px-8">
@@ -167,6 +179,8 @@ export default function SignIn() {
                     {error}
                   </p>
                 )}
+
+                {alreadySignedIn && <SignOutButton />}
 
                 <Button
                   type="submit"

@@ -14,6 +14,10 @@ export function oauthErrorMessage(error: string | null): string | null {
       // Refused by lib/account/oauth-sign-in.ts: unverified Google email, or an
       // account that is invited or deactivated.
       return "We couldn't sign you in with Google. Use a Google account with a verified email, or sign in with your email and password. If you were invited, use the link in your invitation email.";
+    case "AlreadySignedIn":
+      // Refused by lib/account/oauth-sign-in.ts so Google is never linked to
+      // whoever is currently signed in.
+      return "You're already signed in. Sign out first, then continue with Google.";
     default:
       return "Unable to sign in with that provider. Please try again.";
   }

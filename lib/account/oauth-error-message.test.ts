@@ -15,6 +15,10 @@ describe('oauthErrorMessage', () => {
     expect(oauthErrorMessage('AccessDenied')).toMatch(/verified email/);
   });
 
+  it('tells a signed-in user to sign out before using Google', () => {
+    expect(oauthErrorMessage('AlreadySignedIn')).toMatch(/already signed in.*Sign out first/);
+  });
+
   it('falls back to a generic message for other errors', () => {
     expect(oauthErrorMessage('Configuration')).toBe('Unable to sign in with that provider. Please try again.');
   });

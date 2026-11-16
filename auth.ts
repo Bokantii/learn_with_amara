@@ -75,8 +75,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Credentials sign-in is already gated in `authorize`. Every OAuth
       // sign-in must pass the provider / verified-email / account-status rules.
       if (account?.provider && account.provider !== 'credentials') {
+        // `auth()` reads the session cookie of this same callback request.
+        const alreadySignedIn = Boolean((await auth())?.user);
         return isOAuthSignInAllowed(
-          { provider: account.provider, email: user?.email, profile },
+          { provider: account.provider, email: user?.email, profile, alreadySignedIn },
           async (email) =>
             (await prisma.user.findUnique({ where: { email }, select: { status: true } }))?.status ??
             null
