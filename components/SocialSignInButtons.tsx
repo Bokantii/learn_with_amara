@@ -5,13 +5,13 @@ import { getProviders, signIn } from "next-auth/react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
-type SocialProviderId = "google" | "facebook";
+type SocialProviderId = "google";
 
 /**
- * Google / Facebook sign-in buttons, rendered only for providers that are
- * actually configured (auth.ts registers a provider only when its keys are
- * set) — so the page never shows a button that would fail. Renders nothing
- * when no social provider is configured.
+ * Google sign-in button, rendered only when Google is actually configured
+ * (auth.ts registers it only when its keys are set), so the page never shows
+ * a button that would fail. Renders nothing otherwise. Facebook is
+ * deliberately not offered (see lib/account/oauth-sign-in.ts).
  */
 export function SocialSignInButtons({ callbackUrl }: { callbackUrl: string }) {
   const [available, setAvailable] = useState<SocialProviderId[]>([]);
@@ -21,7 +21,7 @@ export function SocialSignInButtons({ callbackUrl }: { callbackUrl: string }) {
     getProviders()
       .then((providers) => {
         if (cancelled || !providers) return;
-        setAvailable((["google", "facebook"] as const).filter((id) => id in providers));
+        setAvailable((["google"] as const).filter((id) => id in providers));
       })
       .catch(() => {
         // Provider list unavailable — keep social sign-in hidden; email/password still works.
@@ -42,7 +42,7 @@ export function SocialSignInButtons({ callbackUrl }: { callbackUrl: string }) {
         </span>
       </div>
 
-      <div className={`grid gap-4 ${available.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className="grid grid-cols-1 gap-4">
         {available.includes("google") && (
           <Button
             type="button"
@@ -69,19 +69,6 @@ export function SocialSignInButtons({ callbackUrl }: { callbackUrl: string }) {
               />
             </svg>
             Google
-          </Button>
-        )}
-        {available.includes("facebook") && (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12"
-            onClick={() => signIn("facebook", { callbackUrl })}
-          >
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 11.007 10.125 11.927v-8.437H7.078v-3.49h3.047V9.412c0-3.007 1.792-4.669 4.533-4.669 1.313 0 2.686.235 2.686.235v2.953h-1.513c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.08 24 18.092 24 12.073z" />
-            </svg>
-            Facebook
           </Button>
         )}
       </div>

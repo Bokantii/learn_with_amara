@@ -12,13 +12,15 @@ import { SocialSignInButtons } from "../../components/SocialSignInButtons";
 import Image from "next/image";
 import logo from "./../../assets/logo.png";
 import { PublicShell } from "../../components/PublicShell";
+import { oauthErrorMessage } from "../../lib/account/oauth-error-message";
 
 function OAuthErrorBanner({ onError }: { onError: (message: string) => void }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("error")) {
-      onError("Unable to sign in with that provider. Please try again.");
+    const message = oauthErrorMessage(searchParams.get("error"));
+    if (message) {
+      onError(message);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

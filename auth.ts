@@ -2,12 +2,12 @@ import NextAuth from 'next-auth';
 import { CredentialsSignin } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import Google from 'next-auth/providers/google';
-import Facebook from 'next-auth/providers/facebook';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from './lib/prisma';
 import { checkLoginRateLimit, getClientIp } from './lib/rate-limit';
 import { canSignIn } from './lib/account/status';
+import { googleProfile, isOAuthSignInAllowed } from './lib/account/oauth-sign-in';
 
 class RateLimitedError extends CredentialsSignin {
   code = 'rate_limited';
@@ -26,11 +26,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
   },
   providers: [
-    // OAuth providers are registered only when their keys are configured, so a
-    // missing key hides the button (components/SocialSignInButtons) instead of
-    // showing one that fails.
-    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google] : []),
-    ...(process.env.AUTH_FACEBOOK_ID && process.env.AUTH_FACEBOOK_SECRET ? [Facebook] : []),
+    // Google is registered only when its keys are configured, so a missing key
+    // hides the button (components/SocialSignInButtons) instead of showing one
+    // that fails. Facebook is deliberately not registered: it does not
+    // guarantee a verified email (see lib/account/oauth-sign-in.ts).
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google({ profile: googleProfile })] : []),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -71,21 +71,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    signIn: async ({ user, account }) => {
-      // Credentials sign-in is already gated in `authorize`. For an OAuth
-      // provider, block a returning user whose account has since been archived
-      // or is still an unclaimed invite — OAuth is not an invite-claim path.
+    signIn: async ({ user, account, profile }) => {
+      // Credentials sign-in is already gated in `authorize`. Every OAuth
+      // sign-in must pass the provider / verified-email / account-status rules.
       if (account?.provider && account.provider !== 'credentials') {
-        const email = user?.email?.toLowerCase();
-        if (email) {
-          const existing = await prisma.user.findUnique({
-            where: { email },
-            select: { status: true },
-          });
-          if (existing && !canSignIn(existing.status)) {
-            return false;
-          }
-        }
+        return isOAuthSignInAllowed(
+          { provider: account.provider, email: user?.email, profile },
+          async (email) =>
+            (await prisma.user.findUnique({ where: { email }, select: { status: true } }))?.status ??
+            null
+        );
       }
       return true;
     },
@@ -106,5 +101,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: '/SignIn',
+    // A refused OAuth sign-in (AccessDenied) would otherwise land on the bare
+    // Auth.js error page; send it to /SignIn, which explains it.
+    error: '/SignIn',
   },
 });
