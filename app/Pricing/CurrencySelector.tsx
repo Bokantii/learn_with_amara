@@ -26,7 +26,7 @@ export default function CurrencySelector({
         <ToggleGroupItem
           key={currency}
           value={currency}
-          className="px-5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="px-5 transition-colors duration-200 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
           {currency}
         </ToggleGroupItem>

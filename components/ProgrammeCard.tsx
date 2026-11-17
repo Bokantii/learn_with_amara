@@ -47,7 +47,10 @@ export default function ProgrammeCard({
 
         <div className="pt-1">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-3xl lg:text-4xl text-primary">
+            <span
+              key={currency}
+              className="text-3xl lg:text-4xl text-primary animate-in fade-in-0 slide-in-from-bottom-1 duration-300 motion-reduce:animate-none"
+            >
               {formatPrice(currency, programme.prices[currency])}
             </span>
             {programme.billingPeriod === "month" && (

@@ -47,8 +47,10 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`transition-colors hover:text-primary ${
-                  pathname === item.href ? 'text-primary' : 'text-foreground'
+                className={`relative py-1 transition-colors duration-200 hover:text-primary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:origin-left after:transition-transform after:duration-300 after:ease-out motion-reduce:after:transition-none ${
+                  pathname === item.href
+                    ? 'text-primary after:scale-x-100'
+                    : 'text-foreground after:scale-x-0 hover:after:scale-x-100'
                 }`}
               >
                 {item.label}
@@ -75,28 +77,44 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2"
+            className="lg:hidden relative p-2 w-10 h-10 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-nav"
           >
-            {isMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            <Menu
+              aria-hidden="true"
+              className={`absolute inset-2 w-6 h-6 transition-all duration-300 ease-out motion-reduce:transition-none ${
+                isMenuOpen ? 'rotate-90 scale-50 opacity-0' : 'rotate-0 scale-100 opacity-100'
+              }`}
+            />
+            <X
+              aria-hidden="true"
+              className={`absolute inset-2 w-6 h-6 transition-all duration-300 ease-out motion-reduce:transition-none ${
+                isMenuOpen ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-50 opacity-0'
+              }`}
+            />
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
-              {navItems.map((item) => (
+        <div
+          className={`lg:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+            isMenuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <nav id="mobile-nav" inert={!isMenuOpen} className="overflow-hidden">
+            <div className="flex flex-col gap-4 py-4 border-t border-border">
+              {navItems.map((item, index) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`text-left py-2 px-4 rounded-lg transition-colors ${
+                  style={{ transitionDelay: isMenuOpen ? `${index * 40}ms` : '0ms' }}
+                  className={`text-left py-2 px-4 rounded-lg transition-[background-color,color,opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
+                    isMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-3 opacity-0'
+                  } ${
                     pathname === item.href
                       ? 'bg-muted text-primary'
                       : 'hover:bg-muted'
@@ -126,7 +144,7 @@ export function Header() {
               </Button>
             </div>
           </nav>
-        )}
+        </div>
       </div>
     </header>
   );
