@@ -97,6 +97,10 @@ test('explains how WhatsApp enrollment works and names the official numbers', as
   await expect(page.getByText('+1 437 291 8783', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('+234 813 040 8788', { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/never ask for card numbers, passwords or one-time codes/).first()).toBeVisible();
-  // No payment accounts are published until real details are filled in.
-  await expect(page.getByRole('heading', { name: 'Official payment accounts' })).toHaveCount(0);
+  // Only the complete (real) payment accounts are published; blank ones stay hidden.
+  await expect(page.getByRole('heading', { name: 'Official payment accounts' }).first()).toBeVisible();
+  await expect(page.getByText('2000469732', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('0228514418', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('dbokantero@gmail.com', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Secure payment link')).toHaveCount(0);
 });

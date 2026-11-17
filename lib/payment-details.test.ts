@@ -44,7 +44,11 @@ describe('getOfficialPaymentDestinations', () => {
     ]);
   });
 
-  it('publishes nothing until real details are filled in', () => {
-    expect(getOfficialPaymentDestinations()).toEqual([]);
+  it('publishes only the complete official accounts; blank ones stay hidden', () => {
+    expect(getOfficialPaymentDestinations().map((d) => d.id)).toEqual([
+      'interac',
+      'ngn-bank-transfer',
+      'ngn-bank-transfer-private',
+    ]);
   });
 });

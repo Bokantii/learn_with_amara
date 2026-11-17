@@ -24,17 +24,27 @@ export const PAYMENT_DESTINATIONS: PaymentDestination[] = [
     id: 'interac',
     method: 'Interac e-Transfer',
     region: 'Canada (CAD)',
-    accountName: '',
-    details: [{ label: 'e-Transfer email', value: '' }],
+    accountName: 'Daniel Bokantero',
+    details: [{ label: 'e-Transfer email', value: 'dbokantero@gmail.com' }],
   },
   {
     id: 'ngn-bank-transfer',
     method: 'Bank transfer',
     region: 'Nigeria (NGN)',
-    accountName: '',
+    accountName: 'INTERNATIONAL CENTER FOR LANGUAGE PROFICIENCY LIMITED',
     details: [
-      { label: 'Bank', value: '' },
-      { label: 'Account number', value: '' },
+      { label: 'Bank', value: 'Signature Bank' },
+      { label: 'Account number', value: '2000469732' },
+    ],
+  },
+  {
+    id: 'ngn-bank-transfer-private',
+    method: 'Bank transfer — private learners',
+    region: 'Nigeria (NGN)',
+    accountName: 'LEARN WITH AMARA',
+    details: [
+      { label: 'Bank', value: 'Union Bank' },
+      { label: 'Account number', value: '0228514418' },
     ],
   },
   {
