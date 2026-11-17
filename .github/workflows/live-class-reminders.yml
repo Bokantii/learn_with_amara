@@ -1,0 +1,30 @@
+name: Live class reminders
+
+# Vercel Hobby plan restricts native Vercel Cron to once/day with only
+# hour-level precision, which isn't enough for a reminder that must fire
+# ~1 hour before classes scattered throughout the day. This workflow is the
+# scheduler instead, calling the same bearer-token-protected route handler
+# Vercel's own cron docs recommend — so switching to native Vercel Cron later
+# (e.g. after a Pro upgrade) is just adding a vercel.json crons entry and
+# removing this file, with zero application code changes.
+#
+# Required repo configuration:
+#   Settings -> Secrets and variables -> Actions -> Secrets -> CRON_SECRET
+#     (same value as the CRON_SECRET env var configured on Vercel)
+#   Settings -> Secrets and variables -> Actions -> Variables -> APP_URL
+#     (the production URL, e.g. https://learn-with-amara.vercel.app)
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the live-class-reminders endpoint
+        run: |
+          curl --fail-with-body -sS \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL }}/api/cron/live-class-reminders"

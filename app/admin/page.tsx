@@ -8,7 +8,7 @@ import { prisma } from "../../lib/prisma";
 export default async function AdminOverview() {
   const [totalStudents, activeStudents, totalPrograms, totalAssignments, pendingSubmissions] =
     await Promise.all([
-      prisma.user.count({ where: { role: "STUDENT" } }),
+      prisma.user.count({ where: { role: "STUDENT", status: { not: "DEACTIVATED" } } }),
       prisma.enrollment.count({ where: { status: "ACTIVE" } }),
       prisma.program.count(),
       prisma.assignment.count(),

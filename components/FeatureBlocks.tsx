@@ -2,6 +2,7 @@
 
 import { Video, Users, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
+import { Reveal, RevealGroup, RevealItem } from './Reveal';
 import { useLanguage } from '../lib/i18n/LanguageContext';
 import { translations } from '../lib/i18n/translations';
 
@@ -14,21 +15,21 @@ export function FeatureBlocks() {
   return (
     <section className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h2 className="text-3xl lg:text-4xl mb-4">
             {copy.heading}
           </h2>
           <p className="text-lg text-muted-foreground">
             {copy.subheading}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <RevealGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {copy.features.map((feature, index) => {
             const Icon = icons[index];
             return (
+              <RevealItem key={index} className="grid">
               <Card
-                key={index}
                 className="border-2 hover:border-primary hover:shadow-lg transition-all duration-300"
               >
                 <CardContent className="p-6 lg:p-8 space-y-4">
@@ -41,9 +42,10 @@ export function FeatureBlocks() {
                   </p>
                 </CardContent>
               </Card>
+              </RevealItem>
             );
           })}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

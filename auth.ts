@@ -2,14 +2,20 @@ import NextAuth from 'next-auth';
 import { CredentialsSignin } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import Google from 'next-auth/providers/google';
-import Facebook from 'next-auth/providers/facebook';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from './lib/prisma';
 import { checkLoginRateLimit, getClientIp } from './lib/rate-limit';
+import { canSignIn } from './lib/account/status';
+import { googleProfile, isOAuthSignInAllowed } from './lib/account/oauth-sign-in';
 
 class RateLimitedError extends CredentialsSignin {
   code = 'rate_limited';
+}
+
+/** The rate limiter can't be trusted (missing production config) — refuse. */
+class RateLimitUnavailableError extends CredentialsSignin {
+  code = 'unavailable';
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -20,8 +26,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
   },
   providers: [
-    Google,
-    Facebook,
+    // Google is registered only when its keys are configured, so a missing key
+    // hides the button (components/SocialSignInButtons) instead of showing one
+    // that fails. Facebook is deliberately not registered: it does not
+    // guarantee a verified email (see lib/account/oauth-sign-in.ts).
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google({ profile: googleProfile })] : []),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -35,9 +44,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const ip = getClientIp(request.headers);
-        const rateLimit = await checkLoginRateLimit(`${ip}:${email.toLowerCase()}`);
+        const rateLimit = await checkLoginRateLimit({ ip, email });
         if (!rateLimit.success) {
-          throw new RateLimitedError();
+          throw rateLimit.reason === 'unavailable'
+            ? new RateLimitUnavailableError()
+            : new RateLimitedError();
         }
 
         const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -50,11 +61,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // An invited-but-not-activated or deactivated account never gets a session.
+        if (!canSignIn(user.status)) {
+          return null;
+        }
+
         return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],
   callbacks: {
+    signIn: async ({ user, account, profile }) => {
+      // Credentials sign-in is already gated in `authorize`. Every OAuth
+      // sign-in must pass the provider / verified-email / account-status rules.
+      if (account?.provider && account.provider !== 'credentials') {
+        // `auth()` reads the session cookie of this same callback request.
+        const alreadySignedIn = Boolean((await auth())?.user);
+        return isOAuthSignInAllowed(
+          { provider: account.provider, email: user?.email, profile, alreadySignedIn },
+          async (email) =>
+            (await prisma.user.findUnique({ where: { email }, select: { status: true } }))?.status ??
+            null
+        );
+      }
+      return true;
+    },
     jwt: async ({ token, user }) => {
       if (user) {
         token.role = user.role;
@@ -65,11 +96,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.sub ?? '';
         session.user.role = token.role;
+        session.user.tokenIssuedAt = typeof token.iat === 'number' ? token.iat : undefined;
       }
       return session;
     },
   },
   pages: {
     signIn: '/SignIn',
+    // A refused OAuth sign-in (AccessDenied) would otherwise land on the bare
+    // Auth.js error page; send it to /SignIn, which explains it.
+    error: '/SignIn',
   },
 });

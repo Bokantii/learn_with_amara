@@ -24,7 +24,7 @@ for (const route of unguardedRoutes) {
 }
 
 test('unenrolled student sees a truthful onboarding state instead of the dashboard', async ({ page }) => {
-  await signIn(page, 'demo@iclp.com', 'demo1234');
+  await signIn(page, 'demo@example.com', 'demo1234');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("You're not enrolled in a program yet")).toBeVisible();
   await expect(page.getByRole('link', { name: 'Browse Programs' })).toBeVisible();

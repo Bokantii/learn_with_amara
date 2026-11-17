@@ -11,6 +11,7 @@ export default function ProgrammeCard({
   isNavigating,
   onSelect,
   ctaLabel = "Select Programme",
+  ctaHref,
   highlightLabel,
 }: {
   programme: Programme;
@@ -19,6 +20,8 @@ export default function ProgrammeCard({
   isNavigating: boolean;
   onSelect: (programme: Programme) => void;
   ctaLabel?: string;
+  /** When set, the CTA is an external link (opens in a new tab) instead of calling onSelect. */
+  ctaHref?: string;
   highlightLabel?: string;
 }) {
   const currencyNote = programme.currencyNotes?.[currency];
@@ -101,23 +104,31 @@ export default function ProgrammeCard({
 
         <div className="flex-1" />
 
-        <Button
-          className={`w-full ${
-            isSelected ? "bg-accent hover:bg-accent/90" : "bg-primary hover:bg-primary/90"
-          }`}
-          size="lg"
-          onClick={() => onSelect(programme)}
-          disabled={isNavigating}
-        >
-          {isSelected ? (
-            <>
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              {isNavigating ? "Redirecting..." : "Selected"}
-            </>
-          ) : (
-            ctaLabel
-          )}
-        </Button>
+        {ctaHref ? (
+          <Button className="w-full bg-primary hover:bg-primary/90" size="lg" asChild>
+            <a href={ctaHref} target="_blank" rel="noopener noreferrer">
+              {ctaLabel}
+            </a>
+          </Button>
+        ) : (
+          <Button
+            className={`w-full ${
+              isSelected ? "bg-accent hover:bg-accent/90" : "bg-primary hover:bg-primary/90"
+            }`}
+            size="lg"
+            onClick={() => onSelect(programme)}
+            disabled={isNavigating}
+          >
+            {isSelected ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                {isNavigating ? "Redirecting..." : "Selected"}
+              </>
+            ) : (
+              ctaLabel
+            )}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

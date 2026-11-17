@@ -1,10 +1,11 @@
 'use server';
 
 import { z } from 'zod';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getAppOrigin } from '../../lib/app-url';
 import { authActionClient } from '../../lib/safe-action';
-import { stripe } from '../../lib/stripe';
+import { ActionError } from '../../lib/action-error';
+import { stripe, isStripeConfigured } from '../../lib/stripe';
 import { translations } from '../../lib/i18n/translations';
 import { PLAN_PRICES_CENTS, DEFAULT_PLAN_ID } from '../../lib/pricing';
 import { findProgrammeById } from '../../lib/programmes';
@@ -14,16 +15,16 @@ const createCheckoutSessionSchema = z.object({
   currency: z.enum(['CAD', 'NGN', 'USD', 'GBP']).optional(),
 });
 
-async function getOrigin() {
-  const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host');
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http';
-  return `${protocol}://${host}`;
-}
-
 export const createCheckoutSessionAction = authActionClient
   .schema(createCheckoutSessionSchema)
   .action(async ({ parsedInput, ctx }) => {
+    // Defense in depth — `/checkout` already hides the payment form when
+    // Stripe isn't configured (Launch Gate item 7), but a direct action call
+    // must fail closed too rather than hit the Stripe API with a fake key.
+    if (!isStripeConfigured) {
+      throw new ActionError("Online payment isn't available right now. Please contact us to enroll.");
+    }
+
     const programme = findProgrammeById(parsedInput.planId);
 
     let planId: string;
@@ -48,7 +49,9 @@ export const createCheckoutSessionAction = authActionClient
       description = tier?.description;
     }
 
-    const origin = await getOrigin();
+    // Stripe's success/cancel redirect origin comes only from
+    // NEXT_PUBLIC_APP_URL in production, never from forwarded headers (#24b).
+    const origin = await getAppOrigin();
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',

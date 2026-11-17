@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
 import { prisma } from '../../../lib/prisma';
+import { sendAssignmentPublishedNotification } from '../../../lib/notifications/events';
+import { notifySafely } from '../../../lib/notifications/safe';
 
 const createAssignmentSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -43,5 +45,12 @@ export const createAssignmentAction = adminActionClient
     revalidatePath('/admin/assignments');
     revalidatePath('/admin');
     revalidatePath('/dashboard/assignments');
+
+    // Assignments have no draft state — created = assigned. Notify eligible students.
+    await notifySafely(() => sendAssignmentPublishedNotification(assignment.id), {
+      event: 'assignment-published',
+      assignmentId: assignment.id,
+    });
+
     return { assignmentId: assignment.id };
   });

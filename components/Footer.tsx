@@ -9,10 +9,9 @@ import logo from '../assets/logo.png';
 import { useLanguage } from '../lib/i18n/LanguageContext';
 import { translations } from '../lib/i18n/translations';
 import { subscribeToNewsletterAction } from '../lib/newsletter';
+import { CANADA_WHATSAPP_URL, NIGERIA_WHATSAPP_URL } from '../lib/whatsapp';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/centerforlanguageproficiency/';
-const CANADA_WHATSAPP_URL = 'https://wa.me/14372918783';
-const NIGERIA_WHATSAPP_URL = 'https://wa.me/2348130408788';
 
 type NewsletterState =
   | { status: 'idle' }

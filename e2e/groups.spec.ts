@@ -11,7 +11,7 @@ test('admin sees seeded groups with correct member counts', async ({ page }) => 
   // Scoped to each seeded group's own card rather than a page-wide text search, so this
   // doesn't assume the dev DB contains only these two groups — other groups created through
   // manual testing may coexist without affecting this assertion.
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/groups');
@@ -29,8 +29,12 @@ test('group member sees their group on the dashboard and the group assignment al
   await signIn(page, 'aisha.bello@example.com', 'student1234');
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  await expect(page.getByText('My Group')).toBeVisible();
-  await expect(page.getByText('TCF Morning Cohort')).toBeVisible();
+  // Scoped to the "My Group(s)" card — the dashboard's real "Tasks Due" card
+  // (V1 Launch Gate item 1) also shows the real "TCF Morning Cohort Speaking
+  // Drill" assignment title, which substring-matches an unscoped search.
+  const myGroupCard = page.locator('[data-slot="card"]', { hasText: 'My Group' });
+  await expect(myGroupCard).toBeVisible();
+  await expect(myGroupCard.getByText('TCF Morning Cohort', { exact: true })).toBeVisible();
 
   await page.goto('/dashboard/assignments');
   const groupAssignmentCard = page.getByText('TCF Morning Cohort Speaking Drill').locator('..').locator('..');

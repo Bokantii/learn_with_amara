@@ -18,6 +18,12 @@ export default function OnboardingEmptyState() {
         <Button asChild className="mt-6 bg-primary hover:bg-primary/90">
           <Link href="/Courses">Browse Programs</Link>
         </Button>
+        <p className="mt-4 text-sm text-slate-500">
+          Not sure where to start?{" "}
+          <Link href="/assessments/placement" className="text-primary hover:underline">
+            Take the free placement test
+          </Link>
+        </p>
       </Card>
     </div>
   );

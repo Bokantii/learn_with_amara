@@ -13,7 +13,7 @@ test('unauthenticated visitor to My Programs is redirected to sign in', async ({
 });
 
 test('admin creates a program and it appears in the admin list', async ({ page }) => {
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/programs');
@@ -32,7 +32,7 @@ test('admin enrolls an unenrolled student in a second program without corrupting
   // Enroll her in a second program via the admin UI and confirm both survive independently —
   // this is the direct regression test for the reassignProgramAction bug (updateMany that
   // used to overwrite every enrollment a student had).
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/students');
@@ -40,7 +40,9 @@ test('admin enrolls an unenrolled student in a second program without corrupting
   await row.getByRole('button', { name: 'Manage' }).click();
 
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('TCF Exam Preparation')).toBeVisible();
+  // `exact` — the Manage dialog now also lists payments, whose rows mention the
+  // program name in a longer string ("Jan 13, 2026 · TCF Exam Preparation · …").
+  await expect(dialog.getByText('TCF Exam Preparation', { exact: true })).toBeVisible();
   await dialog.getByLabel('Enroll in another program').click();
   await page.getByRole('option').first().click();
   await dialog.getByRole('button', { name: 'Enroll' }).click();
@@ -60,7 +62,7 @@ test('a program the student is already enrolled in is never offered again in the
   // programs the student is already in, so the server's unique-constraint guard
   // (exercised in app/admin/students/actions.ts#enrollStudentAction) can never be hit
   // through normal UI use.
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/students');
@@ -89,7 +91,7 @@ test('admin changes one enrollment status without affecting a students other enr
   // it currently isn't, rather than assuming a fixed starting value — the dev DB is real and
   // persists between runs, so a prior run may have already changed it (same accepted
   // statefulness pattern as e2e/admin-grading.spec.ts's self-skip).
-  await signIn(page, 'admin@iclp.com', 'admin1234');
+  await signIn(page, 'admin@example.com', 'admin1234');
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto('/admin/students');

@@ -3,13 +3,19 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../lib/safe-action';
+import { ActionError } from '../../../lib/action-error';
 import { prisma } from '../../../lib/prisma';
+import {
+  sendLiveClassCancellation,
+  sendLiveClassReschedule,
+} from '../../../lib/notifications/liveclass';
+import { notifySafely } from '../../../lib/notifications/safe';
 
 async function assertGroupBelongsToProgram(groupId: string | undefined, programId: string) {
   if (!groupId) return;
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group || group.programId !== programId) {
-    throw new Error('Selected group does not belong to the selected program.');
+    throw new ActionError('Selected group does not belong to the selected program.');
   }
 }
 
@@ -21,17 +27,23 @@ const liveClassFieldsSchema = z.object({
   instructorName: z.string().trim().min(1, 'Instructor is required'),
   startsAt: z.string().min(1, 'Start time is required'),
   endsAt: z.string().min(1, 'End time is required'),
-  meetingUrl: z.string().trim().url('Enter a valid URL').optional().or(z.literal('')),
+  meetingUrl: z
+    .string()
+    .trim()
+    .url('Enter a valid URL')
+    .refine((v) => /^https?:\/\//i.test(v), 'Meeting URL must start with http:// or https://')
+    .optional()
+    .or(z.literal('')),
 });
 
 function parseAndValidateTimes(startsAt: string, endsAt: string) {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    throw new Error('Invalid date/time.');
+    throw new ActionError('Invalid date/time.');
   }
   if (end <= start) {
-    throw new Error('End time must be after the start time.');
+    throw new ActionError('End time must be after the start time.');
   }
   return { start, end };
 }
@@ -62,6 +74,7 @@ export const createLiveClassAction = adminActionClient
 
 const updateLiveClassSchema = liveClassFieldsSchema.extend({
   liveClassId: z.string().min(1),
+  notifyStudents: z.boolean().optional().default(true),
 });
 
 export const updateLiveClassAction = adminActionClient
@@ -70,12 +83,17 @@ export const updateLiveClassAction = adminActionClient
     const existing = await prisma.liveClass.findUniqueOrThrow({
       where: { id: parsedInput.liveClassId },
     });
+    if (existing.status !== 'SCHEDULED') {
+      throw new ActionError('Only scheduled classes can be edited.');
+    }
 
     await assertGroupBelongsToProgram(parsedInput.groupId, parsedInput.programId);
     const { start, end } = parseAndValidateTimes(parsedInput.startsAt, parsedInput.endsAt);
 
-    const rescheduled =
-      start.getTime() !== existing.startsAt.getTime() || end.getTime() !== existing.endsAt.getTime();
+    // A reschedule is a change to the START time — that is what invalidates the
+    // pending reminder and what students are notified about. An end-time-only
+    // edit (correcting the duration) is not a reschedule.
+    const rescheduled = start.getTime() !== existing.startsAt.getTime();
 
     await prisma.liveClass.update({
       where: { id: parsedInput.liveClassId },
@@ -92,6 +110,13 @@ export const updateLiveClassAction = adminActionClient
       },
     });
 
+    if (rescheduled && parsedInput.notifyStudents) {
+      await notifySafely(
+        () => sendLiveClassReschedule(parsedInput.liveClassId),
+        { action: 'reschedule', liveClassId: parsedInput.liveClassId }
+      );
+    }
+
     revalidatePath('/admin/liveclasses');
     revalidatePath('/dashboard/liveclasses');
     return { success: true, rescheduled };
@@ -107,11 +132,20 @@ const cancelLiveClassSchema = z.object({
     'OTHER',
   ]),
   cancellationMessage: z.string().trim().optional(),
+  notifyStudents: z.boolean().optional().default(true),
 });
 
 export const cancelLiveClassAction = adminActionClient
   .schema(cancelLiveClassSchema)
   .action(async ({ parsedInput }) => {
+    const existing = await prisma.liveClass.findUniqueOrThrow({
+      where: { id: parsedInput.liveClassId },
+      select: { status: true },
+    });
+    if (existing.status !== 'SCHEDULED') {
+      throw new ActionError('Only scheduled classes can be cancelled.');
+    }
+
     await prisma.liveClass.update({
       where: { id: parsedInput.liveClassId },
       data: {
@@ -120,6 +154,13 @@ export const cancelLiveClassAction = adminActionClient
         cancellationMessage: parsedInput.cancellationMessage || null,
       },
     });
+
+    if (parsedInput.notifyStudents) {
+      await notifySafely(
+        () => sendLiveClassCancellation(parsedInput.liveClassId),
+        { action: 'cancel', liveClassId: parsedInput.liveClassId }
+      );
+    }
 
     revalidatePath('/admin/liveclasses');
     revalidatePath('/dashboard/liveclasses');

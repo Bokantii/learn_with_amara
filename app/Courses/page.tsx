@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Reveal, RevealGroup, RevealItem } from '../../components/Reveal';
 import { Clock, Award, BookOpen, Target, GraduationCap, Rocket } from 'lucide-react';
 import { PublicShell } from '../../components/PublicShell';
 
@@ -59,7 +60,7 @@ export default function Courses() {
     <PublicShell>
     <div className="py-12 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
           <h1 className="text-4xl lg:text-5xl mb-4">
             Choose Your French Track
           </h1>
@@ -67,12 +68,12 @@ export default function Courses() {
             We focus on one thing: French — for the TCF, TEF, DELF, and DALF exams. Pick the
             track that matches where you&apos;re starting from and the exam you need.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        <RevealGroup className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {tracks.map((track, index) => (
+            <RevealItem key={index} className="grid">
             <Card
-              key={index}
               className={`border-2 hover:shadow-xl transition-all duration-300 ${track.color}`}
             >
               <CardHeader className="p-6 space-y-4">
@@ -101,8 +102,9 @@ export default function Courses() {
                 </Button>
               </CardContent>
             </Card>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </div>
     </PublicShell>

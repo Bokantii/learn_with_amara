@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { adminActionClient } from '../../../../lib/safe-action';
 import { prisma } from '../../../../lib/prisma';
+import { sendLessonPublishedNotification } from '../../../../lib/notifications/events';
+import { notifySafely } from '../../../../lib/notifications/safe';
 
 // ─── Modules ────────────────────────────────────────────────────────────
 
@@ -168,6 +170,11 @@ const setLessonPublishedSchema = z.object({
 export const setLessonPublishedAction = adminActionClient
   .schema(setLessonPublishedSchema)
   .action(async ({ parsedInput }) => {
+    const before = await prisma.lesson.findUnique({
+      where: { id: parsedInput.lessonId },
+      select: { published: true },
+    });
+
     const lesson = await prisma.lesson.update({
       where: { id: parsedInput.lessonId },
       data: { published: parsedInput.published },
@@ -177,6 +184,15 @@ export const setLessonPublishedAction = adminActionClient
     revalidatePath(`/admin/programs/${lesson.module.programId}`);
     revalidatePath('/dashboard/myprograms');
     revalidatePath('/dashboard/recordedlessons');
+
+    // Notify enrolled students only on the first publish (false -> true).
+    if (parsedInput.published && before && !before.published) {
+      await notifySafely(() => sendLessonPublishedNotification(lesson.id), {
+        event: 'lesson-published',
+        lessonId: lesson.id,
+      });
+    }
+
     return { success: true };
   });
 

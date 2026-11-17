@@ -8,6 +8,7 @@ import { Badge } from "../../../components/ui/badge";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
+import { Checkbox } from "../../../components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
@@ -15,7 +16,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../../components/ui/select";
-import { Plus, Pencil, Ban, CheckCircle2, Calendar } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Ban, CheckCircle2, Calendar, QrCode } from "lucide-react";
 import {
   createLiveClassAction, updateLiveClassAction, cancelLiveClassAction, markLiveClassCompletedAction,
 } from "./actions";
@@ -39,6 +41,23 @@ interface LiveClassRow {
   cancellationReason: string | null;
   cancellationMessage: string | null;
   rescheduledAt: string | null;
+  notifications: Record<
+    string,
+    { sent: number; failed: number; skipped: number; total: number }
+  > | null;
+}
+
+function notificationStatusLabel(
+  counts: { sent: number; failed: number; skipped: number; total: number } | undefined
+) {
+  if (!counts || counts.total === 0) return null;
+  if (counts.failed === 0 && counts.skipped === 0) {
+    return `Sent to ${counts.sent} student${counts.sent === 1 ? "" : "s"}`;
+  }
+  const parts = [`${counts.sent} sent`];
+  if (counts.failed > 0) parts.push(`${counts.failed} failed`);
+  if (counts.skipped > 0) parts.push(`${counts.skipped} not sent`);
+  return parts.join(", ");
 }
 
 interface ProgramOption {
@@ -91,6 +110,7 @@ export default function LiveClassesClient({
 
   const [cancellationReason, setCancellationReason] = useState<CancellationReason>(CANCELLATION_REASONS[0]);
   const [cancellationMessage, setCancellationMessage] = useState("");
+  const [notifyStudents, setNotifyStudents] = useState(true);
 
   const groupsForProgram = (pid: string) => groups.filter((g) => g.programId === pid);
 
@@ -121,6 +141,7 @@ export default function LiveClassesClient({
     setEndDate(end.date);
     setEndTime(end.time);
     setMeetingUrl(lc.meetingUrl ?? "");
+    setNotifyStudents(true);
     setError(null);
     setEditTarget(lc);
   };
@@ -164,6 +185,7 @@ export default function LiveClassesClient({
         startsAt: new Date(`${startDate}T${startTime}`).toISOString(),
         endsAt: new Date(`${endDate}T${endTime}`).toISOString(),
         meetingUrl,
+        notifyStudents,
       });
       if (result.serverError || result.validationErrors) {
         setError(result.serverError ?? "Please check the form and try again.");
@@ -182,6 +204,7 @@ export default function LiveClassesClient({
         liveClassId: cancelTarget.id,
         cancellationReason,
         cancellationMessage,
+        notifyStudents,
       });
       if (result.serverError) {
         setError(result.serverError);
@@ -325,44 +348,75 @@ export default function LiveClassesClient({
             <Calendar className="w-3.5 h-3.5 text-sky-500" />
             <span>{formatRange(lc.startsAt, lc.endsAt)}</span>
           </div>
-          {lc.status === "CANCELLED" && (
-            <p className="text-sm text-red-600 mt-2">
-              {lc.cancellationReason && CANCELLATION_REASON_LABEL[lc.cancellationReason as CancellationReason]}
-              {lc.cancellationMessage ? ` — ${lc.cancellationMessage}` : ""}
+          {lc.status === "SCHEDULED" && (
+            <p className="text-xs text-slate-500 mt-1.5">
+              Reminder:{" "}
+              {notificationStatusLabel(lc.notifications?.CLASS_REMINDER) ?? "not yet due"}
+              {lc.rescheduledAt && (
+                <>
+                  {" · "}Reschedule notice:{" "}
+                  {notificationStatusLabel(lc.notifications?.CLASS_RESCHEDULED) ?? "pending"}
+                </>
+              )}
             </p>
           )}
+          {lc.status === "CANCELLED" && (
+            <>
+              <p className="text-sm text-red-600 mt-2">
+                {lc.cancellationReason && CANCELLATION_REASON_LABEL[lc.cancellationReason as CancellationReason]}
+                {lc.cancellationMessage ? ` — ${lc.cancellationMessage}` : ""}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Cancellation email:{" "}
+                {notificationStatusLabel(lc.notifications?.CLASS_CANCELLED) ?? "not sent"}
+              </p>
+            </>
+          )}
         </div>
-        {lc.status === "SCHEDULED" && (
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button variant="outline" size="sm" aria-label={`Edit ${lc.title}`} onClick={() => openEdit(lc)}>
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label={`Mark ${lc.title} completed`}
-              className="border-emerald-300 text-emerald-600 hover:bg-emerald-50"
-              onClick={() => handleMarkCompleted(lc.id)}
-              disabled={isPending}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label={`Cancel ${lc.title}`}
-              className="border-red-300 text-red-600 hover:bg-red-50"
-              onClick={() => {
-                setCancellationReason(CANCELLATION_REASONS[0]);
-                setCancellationMessage("");
-                setError(null);
-                setCancelTarget(lc);
-              }}
-            >
-              <Ban className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            aria-label={`Attendance for ${lc.title}`}
+          >
+            <Link href={`/attendance/manage/${lc.id}`}>
+              <QrCode className="w-4 h-4" />
+            </Link>
+          </Button>
+          {lc.status === "SCHEDULED" && (
+            <>
+              <Button variant="outline" size="sm" aria-label={`Edit ${lc.title}`} onClick={() => openEdit(lc)}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={`Mark ${lc.title} completed`}
+                className="border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+                onClick={() => handleMarkCompleted(lc.id)}
+                disabled={isPending}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={`Cancel ${lc.title}`}
+                className="border-red-300 text-red-600 hover:bg-red-50"
+                onClick={() => {
+                  setCancellationReason(CANCELLATION_REASONS[0]);
+                  setCancellationMessage("");
+                  setNotifyStudents(true);
+                  setError(null);
+                  setCancelTarget(lc);
+                }}
+              >
+                <Ban className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -436,6 +490,19 @@ export default function LiveClassesClient({
           </DialogHeader>
           <form onSubmit={handleUpdate} className="space-y-4">
             {renderFormFields()}
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="editNotifyStudents"
+                checked={notifyStudents}
+                onCheckedChange={(v) => setNotifyStudents(v === true)}
+              />
+              <Label htmlFor="editNotifyStudents" className="text-sm font-normal leading-snug">
+                Notify students of a schedule change
+                <span className="block text-xs text-slate-500">
+                  If the class is moved, a reschedule notification and email go to currently enrolled students.
+                </span>
+              </Label>
+            </div>
             {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setEditTarget(null)}>Cancel</Button>
@@ -478,6 +545,19 @@ export default function LiveClassesClient({
                 onChange={(e) => setCancellationMessage(e.target.value)}
                 placeholder="Today's class has been cancelled because..."
               />
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="cancelNotifyStudents"
+                checked={notifyStudents}
+                onCheckedChange={(v) => setNotifyStudents(v === true)}
+              />
+              <Label htmlFor="cancelNotifyStudents" className="text-sm font-normal leading-snug">
+                Notify affected students now
+                <span className="block text-xs text-slate-500">
+                  Sends a cancellation notification and email to currently enrolled students.
+                </span>
+              </Label>
             </div>
             {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
           </div>

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { stripe } from '../../../../lib/stripe';
 import { prisma } from '../../../../lib/prisma';
 import { resend, EMAIL_FROM } from '../../../../lib/email';
+import { formatMoney } from '../../../../lib/billing/format';
 import PaymentReceiptEmail from '../../../../emails/PaymentReceiptEmail';
 
 export async function POST(request: NextRequest) {
@@ -26,25 +27,47 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.client_reference_id ?? session.metadata?.userId;
+    const amountCents = session.amount_total ?? 0;
 
-    if (userId && session.payment_status === 'paid') {
+    // Only act on a paid session that carries a real user reference and a real
+    // amount. Anything else is acknowledged (200) so Stripe stops retrying —
+    // a missing/typo'd user or a zero total must not create a bogus PAID row.
+    const user = userId
+      ? await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } })
+      : null;
+
+    if (user && amountCents > 0 && session.payment_status === 'paid') {
       const existing = await prisma.payment.findUnique({
         where: { stripePaymentId: session.id },
       });
 
       if (!existing) {
-        const payment = await prisma.payment.create({
-          data: {
-            userId,
-            amountCents: session.amount_total ?? 0,
-            currency: session.currency ?? 'usd',
-            status: 'PAID',
-            stripePaymentId: session.id,
-            dueDate: new Date(),
-            paidAt: new Date(),
-          },
-          include: { user: true },
-        });
+        // A processor-confirmed payment. `programId` / `enrollmentId` stay null:
+        // the checkout plan id is a pricing-catalogue id, not a DB Program, so
+        // the program can't be resolved here (see Known Deferred Issues). An
+        // admin links it on the Payments screen if needed.
+        let payment;
+        try {
+          payment = await prisma.payment.create({
+            data: {
+              userId: user.id,
+              amountCents,
+              currency: session.currency ?? 'usd',
+              status: 'PAID',
+              source: 'STRIPE',
+              stripePaymentId: session.id,
+              paidAt: new Date(),
+            },
+            include: { user: true },
+          });
+        } catch (error) {
+          // A concurrent delivery of the same event lost the create race — the
+          // unique `stripePaymentId` already exists. Treat as success.
+          if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
+            return NextResponse.json({ received: true });
+          }
+          throw error;
+        }
 
         try {
           const { error } = await resend.emails.send({
@@ -53,7 +76,7 @@ export async function POST(request: NextRequest) {
             subject: 'Your ICLP payment receipt',
             react: PaymentReceiptEmail({
               name: payment.user.name,
-              amountFormatted: `$${(payment.amountCents / 100).toFixed(2)}`,
+              amountFormatted: formatMoney(payment.amountCents, payment.currency),
               date: payment.paidAt?.toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
